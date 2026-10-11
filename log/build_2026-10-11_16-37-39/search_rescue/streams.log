@@ -1,0 +1,20 @@
+[1.739s] Invoking command in '/home/rocotics/competition/build/search_rescue': PYTHONPATH=/home/rocotics/competition/build/search_rescue/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/rocotics/competition/install/search_rescue/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /home/rocotics/competition/build/search_rescue/build --no-deps symlink_data --force
+[2.078s] running develop
+[2.265s] running egg_info
+[2.266s] writing search_rescue.egg-info/PKG-INFO
+[2.266s] writing dependency_links to search_rescue.egg-info/dependency_links.txt
+[2.267s] writing entry points to search_rescue.egg-info/entry_points.txt
+[2.268s] writing requirements to search_rescue.egg-info/requires.txt
+[2.268s] writing top-level names to search_rescue.egg-info/top_level.txt
+[2.308s] reading manifest file 'search_rescue.egg-info/SOURCES.txt'
+[2.309s] writing manifest file 'search_rescue.egg-info/SOURCES.txt'
+[2.352s] running build_ext
+[2.381s] Creating /home/rocotics/competition/install/search_rescue/lib/python3.8/site-packages/site.py
+[2.385s] Creating /home/rocotics/competition/install/search_rescue/lib/python3.8/site-packages/search-rescue.egg-link (link to .)
+[2.386s] Installing search_rescue script to /home/rocotics/competition/install/search_rescue/lib/search_rescue
+[2.387s] 
+[2.387s] Installed /home/rocotics/competition/build/search_rescue
+[2.388s] running symlink_data
+[2.388s] symbolically linking /home/rocotics/competition/build/search_rescue/resource/search_rescue -> /home/rocotics/competition/install/search_rescue/share/ament_index/resource_index/packages
+[2.388s] symbolically linking /home/rocotics/competition/build/search_rescue/package.xml -> /home/rocotics/competition/install/search_rescue/share/search_rescue
+[2.447s] Invoked command in '/home/rocotics/competition/build/search_rescue' returned '0': PYTHONPATH=/home/rocotics/competition/build/search_rescue/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/rocotics/competition/install/search_rescue/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /home/rocotics/competition/build/search_rescue/build --no-deps symlink_data --force

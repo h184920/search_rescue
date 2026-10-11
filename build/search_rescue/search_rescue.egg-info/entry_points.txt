@@ -1,0 +1,3 @@
+[console_scripts]
+search_rescue = search_rescue.search_rescue:main
+

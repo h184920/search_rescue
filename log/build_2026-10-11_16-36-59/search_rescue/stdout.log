@@ -1,0 +1,35 @@
+running egg_info
+creating ../build/search_rescue/search_rescue.egg-info
+writing ../build/search_rescue/search_rescue.egg-info/PKG-INFO
+writing dependency_links to ../build/search_rescue/search_rescue.egg-info/dependency_links.txt
+writing entry points to ../build/search_rescue/search_rescue.egg-info/entry_points.txt
+writing requirements to ../build/search_rescue/search_rescue.egg-info/requires.txt
+writing top-level names to ../build/search_rescue/search_rescue.egg-info/top_level.txt
+writing manifest file '../build/search_rescue/search_rescue.egg-info/SOURCES.txt'
+reading manifest file '../build/search_rescue/search_rescue.egg-info/SOURCES.txt'
+writing manifest file '../build/search_rescue/search_rescue.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/rocotics/competition/build/search_rescue/build
+creating /home/rocotics/competition/build/search_rescue/build/lib
+creating /home/rocotics/competition/build/search_rescue/build/lib/search_rescue
+copying search_rescue/search_rescue.py -> /home/rocotics/competition/build/search_rescue/build/lib/search_rescue
+copying search_rescue/__init__.py -> /home/rocotics/competition/build/search_rescue/build/lib/search_rescue
+running install
+running install_lib
+creating /home/rocotics/competition/install/search_rescue/lib/python3.8/site-packages/search_rescue
+copying /home/rocotics/competition/build/search_rescue/build/lib/search_rescue/search_rescue.py -> /home/rocotics/competition/install/search_rescue/lib/python3.8/site-packages/search_rescue
+copying /home/rocotics/competition/build/search_rescue/build/lib/search_rescue/__init__.py -> /home/rocotics/competition/install/search_rescue/lib/python3.8/site-packages/search_rescue
+byte-compiling /home/rocotics/competition/install/search_rescue/lib/python3.8/site-packages/search_rescue/search_rescue.py to search_rescue.cpython-38.pyc
+byte-compiling /home/rocotics/competition/install/search_rescue/lib/python3.8/site-packages/search_rescue/__init__.py to __init__.cpython-38.pyc
+running install_data
+creating /home/rocotics/competition/install/search_rescue/share/ament_index
+creating /home/rocotics/competition/install/search_rescue/share/ament_index/resource_index
+creating /home/rocotics/competition/install/search_rescue/share/ament_index/resource_index/packages
+copying resource/search_rescue -> /home/rocotics/competition/install/search_rescue/share/ament_index/resource_index/packages
+copying package.xml -> /home/rocotics/competition/install/search_rescue/share/search_rescue
+running install_egg_info
+Copying ../build/search_rescue/search_rescue.egg-info to /home/rocotics/competition/install/search_rescue/lib/python3.8/site-packages/search_rescue-0.0.0-py3.8.egg-info
+running install_scripts
+Installing search_rescue script to /home/rocotics/competition/install/search_rescue/lib/search_rescue
+writing list of installed files to '/home/rocotics/competition/build/search_rescue/install.log'

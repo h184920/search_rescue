@@ -1,0 +1,18 @@
+running develop
+running egg_info
+writing search_rescue.egg-info/PKG-INFO
+writing dependency_links to search_rescue.egg-info/dependency_links.txt
+writing entry points to search_rescue.egg-info/entry_points.txt
+writing requirements to search_rescue.egg-info/requires.txt
+writing top-level names to search_rescue.egg-info/top_level.txt
+reading manifest file 'search_rescue.egg-info/SOURCES.txt'
+writing manifest file 'search_rescue.egg-info/SOURCES.txt'
+running build_ext
+Creating /home/rocotics/competition/install/search_rescue/lib/python3.8/site-packages/site.py
+Creating /home/rocotics/competition/install/search_rescue/lib/python3.8/site-packages/search-rescue.egg-link (link to .)
+Installing search_rescue script to /home/rocotics/competition/install/search_rescue/lib/search_rescue
+
+Installed /home/rocotics/competition/build/search_rescue
+running symlink_data
+symbolically linking /home/rocotics/competition/build/search_rescue/resource/search_rescue -> /home/rocotics/competition/install/search_rescue/share/ament_index/resource_index/packages
+symbolically linking /home/rocotics/competition/build/search_rescue/package.xml -> /home/rocotics/competition/install/search_rescue/share/search_rescue

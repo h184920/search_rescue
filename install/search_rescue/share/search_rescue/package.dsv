@@ -1,0 +1,9 @@
+source;share/search_rescue/hook/pythonpath.ps1
+source;share/search_rescue/hook/pythonpath.dsv
+source;share/search_rescue/hook/pythonpath.sh
+source;share/search_rescue/hook/ament_prefix_path.ps1
+source;share/search_rescue/hook/ament_prefix_path.dsv
+source;share/search_rescue/hook/ament_prefix_path.sh
+source;../../build/search_rescue/share/search_rescue/hook/pythonpath_develop.ps1
+source;../../build/search_rescue/share/search_rescue/hook/pythonpath_develop.dsv
+source;../../build/search_rescue/share/search_rescue/hook/pythonpath_develop.sh
