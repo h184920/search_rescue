@@ -5,7 +5,7 @@ from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
-from ros2_aruco_interfaces.msg import ArucoMarkers
+from ros2_aruco.ros2_aruco_interfaces.msg import ArucoMarkers
 from geometry_msgs.msg import Pose
 from std_msgs.msg import Int64
 
