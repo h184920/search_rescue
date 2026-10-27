@@ -1,0 +1,84 @@
+[0.117s] Invoking command in '/home/rocotics/search_rescue/build/turtlebot3_manipulation_hardware': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/rocotics/robot_ml/install/robot_ml:/home/rocotics/ros2_ws/install/search_rescue:/home/rocotics/ros2_ws/install/ros2_aruco:/home/rocotics/ros2_ws/install/robot_vision:/home/rocotics/ros2_ws/install/provenode:/home/rocotics/ros2_ws/install/min_gave:/home/rocotics/ros2_ws/install/bug2_navigation:/home/rocotics/ros2_ws/install/braitenberg_vehicle:/opt/ros/foxy /usr/bin/cmake /home/rocotics/search_rescue/src/turtlebot3_manipulation/turtlebot3_manipulation_hardware -DCMAKE_INSTALL_PREFIX=/home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware
+[0.662s] -- The C compiler identification is GNU 9.4.0
+[1.078s] -- The CXX compiler identification is GNU 9.4.0
+[1.114s] -- Check for working C compiler: /usr/bin/cc
+[1.303s] -- Check for working C compiler: /usr/bin/cc -- works
+[1.313s] -- Detecting C compiler ABI info
+[1.609s] -- Detecting C compiler ABI info - done
+[1.654s] -- Detecting C compile features
+[1.654s] -- Detecting C compile features - done
+[1.660s] -- Check for working CXX compiler: /usr/bin/c++
+[1.922s] -- Check for working CXX compiler: /usr/bin/c++ -- works
+[1.922s] -- Detecting CXX compiler ABI info
+[2.191s] -- Detecting CXX compiler ABI info - done
+[2.214s] -- Detecting CXX compile features
+[2.216s] -- Detecting CXX compile features - done
+[2.299s] -- Found ament_cmake: 0.9.12 (/opt/ros/foxy/share/ament_cmake/cmake)
+[2.418s] -- Found PythonInterp: /usr/bin/python3 (found suitable version "3.8.10", minimum required is "3") 
+[2.419s] -- Using PYTHON_EXECUTABLE: /usr/bin/python3
+[3.179s] -- Found dynamixel_sdk: 3.7.40 (/opt/ros/foxy/share/dynamixel_sdk/cmake)
+[3.197s] -- Found hardware_interface: 0.11.0 (/opt/ros/foxy/share/hardware_interface/cmake)
+[3.432s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[3.482s] -- Found rosidl_adapter: 1.3.1 (/opt/ros/foxy/share/rosidl_adapter/cmake)
+[3.899s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "1.1.1f")  
+[3.970s] -- Found FastRTPS: /opt/ros/foxy/include  
+[4.239s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[6.170s] -- Found rclcpp: 2.4.3 (/opt/ros/foxy/share/rclcpp/cmake)
+[6.672s] -- Found rmw_implementation_cmake: 1.0.4 (/opt/ros/foxy/share/rmw_implementation_cmake/cmake)
+[6.698s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[6.711s] -- Looking for pthread.h
+[7.085s] -- Looking for pthread.h - found
+[7.087s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[7.355s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+[7.356s] -- Looking for pthread_create in pthreads
+[7.529s] -- Looking for pthread_create in pthreads - not found
+[7.529s] -- Looking for pthread_create in pthread
+[7.754s] -- Looking for pthread_create in pthread - found
+[7.757s] -- Found Threads: TRUE  
+[8.612s] -- Configuring done
+[8.837s] -- Generating done
+[8.865s] -- Build files have been written to: /home/rocotics/search_rescue/build/turtlebot3_manipulation_hardware
+[8.896s] Invoked command in '/home/rocotics/search_rescue/build/turtlebot3_manipulation_hardware' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/rocotics/robot_ml/install/robot_ml:/home/rocotics/ros2_ws/install/search_rescue:/home/rocotics/ros2_ws/install/ros2_aruco:/home/rocotics/ros2_ws/install/robot_vision:/home/rocotics/ros2_ws/install/provenode:/home/rocotics/ros2_ws/install/min_gave:/home/rocotics/ros2_ws/install/bug2_navigation:/home/rocotics/ros2_ws/install/braitenberg_vehicle:/opt/ros/foxy /usr/bin/cmake /home/rocotics/search_rescue/src/turtlebot3_manipulation/turtlebot3_manipulation_hardware -DCMAKE_INSTALL_PREFIX=/home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware
+[8.899s] Invoking command in '/home/rocotics/search_rescue/build/turtlebot3_manipulation_hardware': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/rocotics/robot_ml/install/robot_ml:/home/rocotics/ros2_ws/install/search_rescue:/home/rocotics/ros2_ws/install/ros2_aruco:/home/rocotics/ros2_ws/install/robot_vision:/home/rocotics/ros2_ws/install/provenode:/home/rocotics/ros2_ws/install/min_gave:/home/rocotics/ros2_ws/install/bug2_navigation:/home/rocotics/ros2_ws/install/braitenberg_vehicle:/opt/ros/foxy /usr/bin/cmake --build /home/rocotics/search_rescue/build/turtlebot3_manipulation_hardware -- -j4 -l4
+[9.008s] [35m[1mScanning dependencies of target turtlebot3_manipulation_hardware[0m
+[9.646s] [ 25%] [32mBuilding CXX object CMakeFiles/turtlebot3_manipulation_hardware.dir/src/dynamixel_sdk_wrapper.cpp.o[0m
+[9.680s] [ 50%] [32mBuilding CXX object CMakeFiles/turtlebot3_manipulation_hardware.dir/src/turtlebot3_manipulation_system.cpp.o[0m
+[9.700s] [ 75%] [32mBuilding CXX object CMakeFiles/turtlebot3_manipulation_hardware.dir/src/opencr.cpp.o[0m
+[21.666s] [100%] [32m[1mLinking CXX shared library libturtlebot3_manipulation_hardware.so[0m
+[22.335s] [100%] Built target turtlebot3_manipulation_hardware
+[22.370s] Invoked command in '/home/rocotics/search_rescue/build/turtlebot3_manipulation_hardware' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/rocotics/robot_ml/install/robot_ml:/home/rocotics/ros2_ws/install/search_rescue:/home/rocotics/ros2_ws/install/ros2_aruco:/home/rocotics/ros2_ws/install/robot_vision:/home/rocotics/ros2_ws/install/provenode:/home/rocotics/ros2_ws/install/min_gave:/home/rocotics/ros2_ws/install/bug2_navigation:/home/rocotics/ros2_ws/install/braitenberg_vehicle:/opt/ros/foxy /usr/bin/cmake --build /home/rocotics/search_rescue/build/turtlebot3_manipulation_hardware -- -j4 -l4
+[22.373s] Invoking command in '/home/rocotics/search_rescue/build/turtlebot3_manipulation_hardware': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/rocotics/robot_ml/install/robot_ml:/home/rocotics/ros2_ws/install/search_rescue:/home/rocotics/ros2_ws/install/ros2_aruco:/home/rocotics/ros2_ws/install/robot_vision:/home/rocotics/ros2_ws/install/provenode:/home/rocotics/ros2_ws/install/min_gave:/home/rocotics/ros2_ws/install/bug2_navigation:/home/rocotics/ros2_ws/install/braitenberg_vehicle:/opt/ros/foxy /usr/bin/cmake --install /home/rocotics/search_rescue/build/turtlebot3_manipulation_hardware
+[22.395s] -- Install configuration: ""
+[22.396s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/turtlebot3_manipulation_hardware.xml
+[22.399s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/include
+[22.399s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/include/turtlebot3_manipulation_hardware
+[22.399s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/include/turtlebot3_manipulation_hardware/opencr_control_table.hpp
+[22.400s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/include/turtlebot3_manipulation_hardware/turtlebot3_manipulation_system.hpp
+[22.400s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/include/turtlebot3_manipulation_hardware/visibility_control.h
+[22.400s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/include/turtlebot3_manipulation_hardware/opencr.hpp
+[22.401s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/include/turtlebot3_manipulation_hardware/dynamixel_sdk_wrapper.hpp
+[22.401s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/include/turtlebot3_manipulation_hardware/opencr_definitions.hpp
+[22.403s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/lib/libturtlebot3_manipulation_hardware.so
+[22.404s] -- Set runtime path of "/home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/lib/libturtlebot3_manipulation_hardware.so" to ""
+[22.406s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/environment/library_path.sh
+[22.409s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/environment/library_path.dsv
+[22.410s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/ament_index/resource_index/package_run_dependencies/turtlebot3_manipulation_hardware
+[22.411s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/ament_index/resource_index/parent_prefix_path/turtlebot3_manipulation_hardware
+[22.413s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/environment/ament_prefix_path.sh
+[22.414s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/environment/ament_prefix_path.dsv
+[22.415s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/environment/path.sh
+[22.434s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/environment/path.dsv
+[22.434s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/local_setup.bash
+[22.435s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/local_setup.sh
+[22.435s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/local_setup.zsh
+[22.436s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/local_setup.dsv
+[22.436s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/package.dsv
+[22.436s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/ament_index/resource_index/packages/turtlebot3_manipulation_hardware
+[22.437s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/ament_index/resource_index/hardware_interface__pluginlib__plugin/turtlebot3_manipulation_hardware
+[22.438s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/cmake/ament_cmake_export_include_directories-extras.cmake
+[22.438s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/cmake/ament_cmake_export_libraries-extras.cmake
+[22.438s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/cmake/ament_cmake_export_dependencies-extras.cmake
+[22.438s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/cmake/turtlebot3_manipulation_hardwareConfig.cmake
+[22.438s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/cmake/turtlebot3_manipulation_hardwareConfig-version.cmake
+[22.438s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_hardware/share/turtlebot3_manipulation_hardware/package.xml
+[22.438s] Invoked command in '/home/rocotics/search_rescue/build/turtlebot3_manipulation_hardware' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/rocotics/robot_ml/install/robot_ml:/home/rocotics/ros2_ws/install/search_rescue:/home/rocotics/ros2_ws/install/ros2_aruco:/home/rocotics/ros2_ws/install/robot_vision:/home/rocotics/ros2_ws/install/provenode:/home/rocotics/ros2_ws/install/min_gave:/home/rocotics/ros2_ws/install/bug2_navigation:/home/rocotics/ros2_ws/install/braitenberg_vehicle:/opt/ros/foxy /usr/bin/cmake --install /home/rocotics/search_rescue/build/turtlebot3_manipulation_hardware

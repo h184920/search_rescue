@@ -1,0 +1,49 @@
+[0.101s] Invoking command in '/home/rocotics/search_rescue/build/turtlebot3_manipulation_cartographer': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/rocotics/robot_ml/install/robot_ml:/home/rocotics/ros2_ws/install/search_rescue:/home/rocotics/ros2_ws/install/ros2_aruco:/home/rocotics/ros2_ws/install/robot_vision:/home/rocotics/ros2_ws/install/provenode:/home/rocotics/ros2_ws/install/min_gave:/home/rocotics/ros2_ws/install/bug2_navigation:/home/rocotics/ros2_ws/install/braitenberg_vehicle:/opt/ros/foxy /usr/bin/cmake /home/rocotics/search_rescue/src/turtlebot3_manipulation/turtlebot3_manipulation_cartographer -DCMAKE_INSTALL_PREFIX=/home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer
+[0.684s] -- The C compiler identification is GNU 9.4.0
+[1.093s] -- The CXX compiler identification is GNU 9.4.0
+[1.136s] -- Check for working C compiler: /usr/bin/cc
+[1.384s] -- Check for working C compiler: /usr/bin/cc -- works
+[1.384s] -- Detecting C compiler ABI info
+[1.672s] -- Detecting C compiler ABI info - done
+[1.694s] -- Detecting C compile features
+[1.696s] -- Detecting C compile features - done
+[1.702s] -- Check for working CXX compiler: /usr/bin/c++
+[1.996s] -- Check for working CXX compiler: /usr/bin/c++ -- works
+[1.997s] -- Detecting CXX compiler ABI info
+[2.268s] -- Detecting CXX compiler ABI info - done
+[2.290s] -- Detecting CXX compile features
+[2.291s] -- Detecting CXX compile features - done
+[2.316s] -- Found ament_cmake: 0.9.12 (/opt/ros/foxy/share/ament_cmake/cmake)
+[2.507s] -- Found PythonInterp: /usr/bin/python3 (found suitable version "3.8.10", minimum required is "3") 
+[2.508s] -- Using PYTHON_EXECUTABLE: /usr/bin/python3
+[3.360s] -- Configuring done
+[3.385s] -- Generating done
+[3.392s] -- Build files have been written to: /home/rocotics/search_rescue/build/turtlebot3_manipulation_cartographer
+[3.409s] Invoked command in '/home/rocotics/search_rescue/build/turtlebot3_manipulation_cartographer' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/rocotics/robot_ml/install/robot_ml:/home/rocotics/ros2_ws/install/search_rescue:/home/rocotics/ros2_ws/install/ros2_aruco:/home/rocotics/ros2_ws/install/robot_vision:/home/rocotics/ros2_ws/install/provenode:/home/rocotics/ros2_ws/install/min_gave:/home/rocotics/ros2_ws/install/bug2_navigation:/home/rocotics/ros2_ws/install/braitenberg_vehicle:/opt/ros/foxy /usr/bin/cmake /home/rocotics/search_rescue/src/turtlebot3_manipulation/turtlebot3_manipulation_cartographer -DCMAKE_INSTALL_PREFIX=/home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer
+[3.411s] Invoking command in '/home/rocotics/search_rescue/build/turtlebot3_manipulation_cartographer': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/rocotics/robot_ml/install/robot_ml:/home/rocotics/ros2_ws/install/search_rescue:/home/rocotics/ros2_ws/install/ros2_aruco:/home/rocotics/ros2_ws/install/robot_vision:/home/rocotics/ros2_ws/install/provenode:/home/rocotics/ros2_ws/install/min_gave:/home/rocotics/ros2_ws/install/bug2_navigation:/home/rocotics/ros2_ws/install/braitenberg_vehicle:/opt/ros/foxy /usr/bin/cmake --build /home/rocotics/search_rescue/build/turtlebot3_manipulation_cartographer -- -j4 -l4
+[3.520s] Invoked command in '/home/rocotics/search_rescue/build/turtlebot3_manipulation_cartographer' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/rocotics/robot_ml/install/robot_ml:/home/rocotics/ros2_ws/install/search_rescue:/home/rocotics/ros2_ws/install/ros2_aruco:/home/rocotics/ros2_ws/install/robot_vision:/home/rocotics/ros2_ws/install/provenode:/home/rocotics/ros2_ws/install/min_gave:/home/rocotics/ros2_ws/install/bug2_navigation:/home/rocotics/ros2_ws/install/braitenberg_vehicle:/opt/ros/foxy /usr/bin/cmake --build /home/rocotics/search_rescue/build/turtlebot3_manipulation_cartographer -- -j4 -l4
+[3.527s] Invoking command in '/home/rocotics/search_rescue/build/turtlebot3_manipulation_cartographer': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/rocotics/robot_ml/install/robot_ml:/home/rocotics/ros2_ws/install/search_rescue:/home/rocotics/ros2_ws/install/ros2_aruco:/home/rocotics/ros2_ws/install/robot_vision:/home/rocotics/ros2_ws/install/provenode:/home/rocotics/ros2_ws/install/min_gave:/home/rocotics/ros2_ws/install/bug2_navigation:/home/rocotics/ros2_ws/install/braitenberg_vehicle:/opt/ros/foxy /usr/bin/cmake --install /home/rocotics/search_rescue/build/turtlebot3_manipulation_cartographer
+[3.550s] -- Install configuration: ""
+[3.550s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/config
+[3.551s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/config/turtlebot3_2d.lua
+[3.551s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/launch
+[3.551s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/launch/cartographer.launch.py
+[3.551s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/launch/occupancy_grid.launch.py
+[3.552s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/rviz
+[3.552s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/rviz/cartographer.rviz
+[3.552s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/ament_index/resource_index/package_run_dependencies/turtlebot3_manipulation_cartographer
+[3.552s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/ament_index/resource_index/parent_prefix_path/turtlebot3_manipulation_cartographer
+[3.553s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/environment/ament_prefix_path.sh
+[3.560s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/environment/ament_prefix_path.dsv
+[3.561s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/environment/path.sh
+[3.562s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/environment/path.dsv
+[3.568s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/local_setup.bash
+[3.572s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/local_setup.sh
+[3.572s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/local_setup.zsh
+[3.573s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/local_setup.dsv
+[3.575s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/package.dsv
+[3.575s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/ament_index/resource_index/packages/turtlebot3_manipulation_cartographer
+[3.584s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/cmake/turtlebot3_manipulation_cartographerConfig.cmake
+[3.586s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/cmake/turtlebot3_manipulation_cartographerConfig-version.cmake
+[3.588s] -- Installing: /home/rocotics/search_rescue/install/turtlebot3_manipulation_cartographer/share/turtlebot3_manipulation_cartographer/package.xml
+[3.588s] Invoked command in '/home/rocotics/search_rescue/build/turtlebot3_manipulation_cartographer' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/rocotics/robot_ml/install/robot_ml:/home/rocotics/ros2_ws/install/search_rescue:/home/rocotics/ros2_ws/install/ros2_aruco:/home/rocotics/ros2_ws/install/robot_vision:/home/rocotics/ros2_ws/install/provenode:/home/rocotics/ros2_ws/install/min_gave:/home/rocotics/ros2_ws/install/bug2_navigation:/home/rocotics/ros2_ws/install/braitenberg_vehicle:/opt/ros/foxy /usr/bin/cmake --install /home/rocotics/search_rescue/build/turtlebot3_manipulation_cartographer
