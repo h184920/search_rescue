@@ -1,1 +1,0 @@
-/home/rocotics/competition/search_rescue/setup.py
