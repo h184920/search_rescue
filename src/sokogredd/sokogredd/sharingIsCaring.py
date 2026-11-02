@@ -1,21 +1,21 @@
-
+import math as m
 
 class MutableVector:
 
-    def __init__(self):
-        self.__x0, self.__y0, self.__x, self.__y = 0,0,0,0
-        self.__dx, self.__dy = 0,0
-        self.__len = 0.0
+    def __init__(self, origin=(0, 0), end=(0, 0)):
+        self.__x0, self.__y0 = origin
+        self.__x, self.__y = origin
+        self.__update()
 
     def __mul__(self, c):
         return self.__dx*c, self.__dy*c
 
-    def setOrigin(self, point: tuple[float, float]):
+    def fromOrigin(self, point: tuple[float, float]):
         self.__x0, self.__y0 = point
         self.__update()
         return self
 
-    def setEnd(self, point: tuple[float, float]):
+    def toEnd(self, point: tuple[float, float]):
         self.__x, self.__y = point
         self.__update()
         return self
@@ -26,3 +26,27 @@ class MutableVector:
 
     def len(self):
         return self.__len
+
+    def dx(self):
+        return self.__dx
+
+    def dy(self):
+        return self.__dy
+
+
+def findBlockage(origin: tuple[int, int], 
+                 end: tuple[int, int], 
+                 grid: list[list[int | bool]],
+                 ) -> int:
+    arrow = MutableVector(origin, end)
+    step = 1/2
+    for i in range(1, int(arrow.len()/step) + 1):
+        i, j = arrow*step*i
+        if grid[round(i)][round(j)] != 0:
+            return i, j
+    return -1, -1
+
+
+
+
+
