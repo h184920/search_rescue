@@ -49,7 +49,7 @@ def findBlockage(origin: tuple[int, int],
 if __name__ == '__main__':
 
     grid = [
-        [0 for 0 in range(100)] for _ in range(100)
+        [0 for _ in range(100)] for _ in range(100)
     ]
 
     def drawWall(p, q):
