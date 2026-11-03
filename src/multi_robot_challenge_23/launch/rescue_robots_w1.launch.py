@@ -24,7 +24,7 @@ def generate_launch_description():
     second_tb3_pos = ['0.0', '1.0', '0.0']
     #Starting orientation in the gazebo world of each robot
     first_tb3_yaw = '0.0'
-    second_tb3_yaw = '0.0'
+    second_tb3_yaw = '0.0' 
 
     # Declaring use_sim_time as a launch argument that can then be used in all launch files
     sim_time_arg = DeclareLaunchArgument(
