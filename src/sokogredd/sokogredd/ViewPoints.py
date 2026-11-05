@@ -63,6 +63,7 @@ def scan_rundt(grid, flate, rad, kolonne, radius_celler, antall_rays=700):
     kolonne_treff = forste_treff(grid, rader, kolonner)
     return rad_treff[flate[rad_treff, kolonne_treff]], kolonne_treff[flate[rad_treff, kolonne_treff]]
 
+
 #TODO
 '''
 1 en fyll funksjon som bruker flood fill til å sitte/finne fra punktet
