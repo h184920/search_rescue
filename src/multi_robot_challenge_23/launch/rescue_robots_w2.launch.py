@@ -36,10 +36,16 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     # Starting Gazebo
-    gazebo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([os.path.join(get_package_share_directory('gazebo_ros'), 'launch'), '/gazebo.launch.py']),
-        launch_arguments={'world': world_file_path}.items()
+
+    try: 
+        gazebo = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([os.path.join(get_package_share_directory('gazebo_ros'), 'launch'), '/gazebo.launch.py']),
+            launch_arguments={'world': world_file_path}.items()
     )
+    except Exception as e:
+        print("\n"*3 + str(e) + "\n"*3)
+
+
 
     # Starting Map Server
     map_server = Node(
