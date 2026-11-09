@@ -6,21 +6,27 @@ Igjen å gjøre:
 
     For koding:
 
-    - Finne punktene som skal kjøres etter #Jonas holder på 
+    - Koble opp superkontroller logikk for styring av robottene.
+
+        -1. subscriptions til tb_i/aruco_marker
+
+        -2. opprette klient til poeng-server
+
+        -3. publishers til tb_i/filtered_detection 
+
+    - implementere 'koordinator.py' # elias og jonas holder på 
+
+        -1. subscriptions til tb_i/filtered_detection (ArucoMarker message type)
+
+        -2. punkt-generatorer fra OccupancyGrid <-- '/map'
+
+        -3. action-klienter til Bug2 
+
+            |-> Om stor flamme detektert, send 2 robotter til posisjonen den er på (får aruco   markeren sin posisjon og id ID fra topic)
 
     - Ligge til Bug2 algoritme #Elias holder på
         
         - Koble til action client til super #Elias holder på
-
-    - Koble opp superkontroller logikk for styring av robottene.
-
-        - Om stor flamme detektert, send 2 robotter til posisjonen den er på (får aruco markeren sin posisjon og id ID fra topic)
-    
-    - Koble poeng-server klient til styre kontrolleren. 
-
-    - Detesksjonsystem, bruke aruco markers topic subscribsions for å finne/kjenne igjen aruco markeresene. 
-
-    - 
 
     For Rapporten: 
 
