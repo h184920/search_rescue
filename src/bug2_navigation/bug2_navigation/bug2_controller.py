@@ -24,7 +24,7 @@ class bug2_controller(Node):
         self.goalX = None
         self.goalY = None 
         self.aktivtMaal = False
-        self.actionServer = ActionServer(self, Bug2, "bug2", execute_callback=self.execute_callback, callback_group=ReentrantCallbackGroup)
+        self.actionServer = ActionServer(self, Bug2, "bug2", execute_callback=self.execute_callback, callback_group=ReentrantCallbackGroup())
 
         self.startX = None
         self.startY = None
@@ -178,10 +178,17 @@ class bug2_controller(Node):
 
 def main(args=None):
 
+    rclpy.init(args=args)
+
     controller = bug2_controller()
+
     executor = MultiThreadedExecutor()
     executor.add_node(controller)
     executor.spin()
+
+    controller.destroy_node()
+
+    rclpy.shutdown()
   
 
 

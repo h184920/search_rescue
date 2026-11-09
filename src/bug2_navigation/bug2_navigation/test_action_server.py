@@ -20,7 +20,7 @@ class test_action_server(Node):
 
         goal = Bug2.Goal()
 
-        goal.target_position = Point(goal_x, goal_y, 0.0)
+        goal.target_position = Point(x=goal_x, y=goal_y, z=0.0)
 
         self.get_logger().info("Nå må me vente på at mr bug2 action server skal svare oss....")
         self.action_client.wait_for_server()
