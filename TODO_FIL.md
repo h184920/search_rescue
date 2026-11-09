@@ -6,15 +6,15 @@ Igjen å gjøre:
 
     For koding:
 
-    - Koble opp superkontroller logikk for styring av robottene.
+    - Superkontroller: Koble opp superkontroller logikk for styring av robottene.
 
         -1. subscriptions til tb_i/aruco_marker
 
         -2. opprette klient til poeng-server
-
+  
         -3. publishers til tb_i/filtered_detection 
 
-    - implementere 'koordinator.py' # elias og jonas holder på 
+    - Koordinator: implementere 'koordinator.py' # elias og jonas holder på 
 
         -1. subscriptions til tb_i/filtered_detection (ArucoMarker message type)
 
@@ -24,7 +24,7 @@ Igjen å gjøre:
 
             |-> Om stor flamme detektert, send 2 robotter til posisjonen den er på (får aruco   markeren sin posisjon og id ID fra topic)
 
-    - Ligge til Bug2 algoritme #Elias holder på
+    - Bug2: Ligge til Bug2 algoritme #Elias holder på
         
         - Koble til action client til super #Elias holder på
 
