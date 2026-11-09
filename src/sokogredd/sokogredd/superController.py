@@ -4,6 +4,9 @@ import cv2
 import numpy as np
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
+from ros2_aruco_interfaces.msg import ArucoMarkers
+
+
 
 class superController(Node):
     def __init__(self) -> None:
@@ -12,8 +15,18 @@ class superController(Node):
         #TODO subscribe til begge namespacene sine camera og posisjon.
         
 
+        #TODO Subscribe to both robots’ detectors
 
-#TODO lag callbacks
+        self.create_subscription(ArucoMarkers, '/tb3_0/aruco_markers', self.tb3_0_callback, 10)
+        self.create_subscription(ArucoMarkers, '/tb3_1/aruco_markers', self.tb3_1_callback, 10)
+
+        def tb3_0_callback(self, msg):
+            self.marker_callback(msg, 'tb3_0')
+
+        def tb3_1_callback(self, msg):
+            self.marker_callback(msg, 'tb3_1')
+
+        #def marker_callback(self, msg, robot):
 
 
 def main(args=None):
