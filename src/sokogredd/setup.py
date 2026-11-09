@@ -24,6 +24,7 @@ setup(
     entry_points={
         'console_scripts': [
             "ViewPoints = sokogredd.ViewPoints:main",
+            "superController = sokogredd.superController:main"
         ],
     },
 )
