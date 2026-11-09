@@ -9,6 +9,8 @@ from ros2_aruco.ros2_aruco_interfaces.msg import ArucoMarkers
 from geometry_msgs.msg import Pose
 from std_msgs.msg import Int64
 
+from detection.msg import Detection
+
 import tf2_geometry_msgs
 
 class MarkerMapPose(Node):
@@ -24,8 +26,10 @@ class MarkerMapPose(Node):
         self.marker_recieved = False
 
         self.marker_recognition_sub = self.create_subscription(ArucoMarkers, '/'+self.namespace+'/aruco_markers', self.clbk_marker_recognition, 10)
-        self.marker_map_pose_pub = self.create_publisher(Pose, '/'+self.namespace+'/marker_map_pose', 10)
-        self.marker_id_pub = self.create_publisher(Int64,'/'+self.namespace+'/marker_id', 10)
+        self.detection_publisher = self.create_publisher(Detection, '/aruco_detections')
+        #self.marker_map_pose_pub = self.create_publisher(Pose, '/'+self.namespace+'/marker_map_pose', 10)
+        #self.marker_id_pub = self.create_publisher(Int64,'/'+self.namespace+'/marker_id', 10)
+
 
         #Initialize a transform listener that is later used for looking up tranformations from one frame to another
         self.tf_buffer = Buffer()
@@ -57,9 +61,15 @@ class MarkerMapPose(Node):
         marker_map_pose = tf2_geometry_msgs.do_transform_pose(self.marker_pose, self.trans_camera_map)
 
         if self.marker_id != 1000:
-            self.marker_map_pose_pub.publish(marker_map_pose)
-            marker_id_msg.data = self.marker_id
-            self.marker_id_pub.publish(marker_id_msg)
+            #self.marker_map_pose_pub.publish(marker_map_pose)
+            #marker_id_msg.data = self.marker_id
+            #self.marker_id_pub.publish(marker_id_msg)
+            detected = Detection()
+            detected.marker_id = marker_id_msg.data
+            detected.tb_id = self.namespace
+            detected.position = marker_map_pose
+            self.detection_publisher.publish(detected)
+            
 
 def main(args=None):
     rclpy.init(args=args)
