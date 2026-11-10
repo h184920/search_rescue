@@ -32,7 +32,7 @@ Igjen å gjøre:
 
     For Rapporten: 
 
-    - 
+    - #Freddy holder på
     
     - 
     
