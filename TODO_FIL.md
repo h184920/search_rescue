@@ -1,18 +1,20 @@
 Her kan vi holde styr på hva som er igjen av biter. også for å kommunisere slik at vi vet hvem som gjør hva videre.
-Her kan alle ligge til og fjerne oppgaver fortkommende:)  
+Her kan alle ligge til og fjerne oppgaver fortkommende: 
 
 
 Igjen å gjøre:
 
     For koding:
 
+    - Endre navn på ting
+
     - Superkontroller: Koble opp superkontroller logikk for styring av robottene.
 
-        -1. subscriptions til tb_i/aruco_marker
+        ##-1. subscriptions til tb_i/aruco_marker
 
-        -2. opprette klient til poeng-server
+        ##-2. opprette klient til poeng-server
   
-        -3. publishers til tb_i/filtered_detection 
+        ##-3. publishers til tb_i/filtered_detection 
 
     - Koordinator: implementere 'koordinator.py' # elias og jonas holder på 
 

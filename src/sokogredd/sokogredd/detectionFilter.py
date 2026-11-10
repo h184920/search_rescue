@@ -14,22 +14,21 @@ from multi_robot_scoring.scoring_interfaces import SetMarkerPosition
 # todo: endre vekk fra busy wait strategi for poeng-registrering
 # ta hensyn til mulig ikke godkjent deteksjon
 
-class Leder(Node):
+class DetectionFilter(Node):
 
     def __init__(self):
-        super().__init__('leder_controller')
+        super().__init__('detection_filter')
         self.complete = False
-        self.checked = set()
+        self.checked = set()   
         self.detectionBuffer = list()
-        self.create_subscription(Detection, '/aruco_detections', self.subscription_callback, callback_group=ReentrantCallbackGroup)
-        self.filteredMarkersPub = self.create_publisher(Detection, '/filtered_detections', 10)
+        self.create_subscription(Detection, '/detection', self.subscription_callback)
+        self.filteredMarkersPub = self.create_publisher(Detection, '/true_detection', 10)
         self.points_client = self.create_client(SetMarkerPosition, '/set_marker_position')
 
     def subscription_callback(self, detectionMsg):
         if detectionMsg.marker_id in self.checked:
             return
         self.detectionBuffer.append(detectionMsg)
-
 
     def check_buffer(self):
         while len(self.detectionBuffer) != 0:
@@ -47,9 +46,15 @@ class Leder(Node):
             self.filteredMarkersPub.publish(detectedPoint)
             
     def spin(self):
-        while not self.complete:
+        while not self.isComplete():
             rclpy.spin_once(self)
             self.check_buffer()
+
+    def isComplete(self):
+        return self.complete or len(self.checked) >= 5
+
+    def setComplete(self, buulien):
+        self.complete = buulien
 
     def LOGG(self, obj):
         print(obj)

@@ -34,7 +34,7 @@ class test_action_server(Node):
 
         if not goal_handle.accepted:
             self.get_logger().info(f"Målpunktet ikke godkjent")
-            rclpy.shutdown()
+            return
 
         self.get_logger().info("Målpunktet ble akkseptert.")
         result_future = goal_handle.get_result_async()

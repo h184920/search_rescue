@@ -43,20 +43,5 @@ class TreeMaker(dict):
         array[j] = temp
 
 
-
-
-
-
-
-
-
-
-
-
-
-    
-    
-
-
 if __name__ == '__main__':
     pass
