@@ -51,3 +51,5 @@ Igjen å gjøre:
         - fjerne ubrukt kode/klasser/funksjoner
 
         - har vi mye tid så er det garrantert super behov for opptimalisering/gjøre robot mer smooth i bevegelsene. 
+
+        - optimalisere angular og linear I go_to_point og wall_follower, pr nå I testing går dette tregt, som bare betyr store muligheter for optimalisering:=) 
