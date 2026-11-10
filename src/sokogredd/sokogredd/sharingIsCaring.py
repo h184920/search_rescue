@@ -33,6 +33,9 @@ class MutableVector:
     def dy(self):
         return self.__dy
 
+def distance(x1, y1, x2, y2):
+    return m.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+
 
 def findBlockage(origin: tuple[int, int], 
                  end: tuple[int, int], 
