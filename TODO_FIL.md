@@ -40,3 +40,14 @@ Igjen å gjøre:
     - 
 
     - 
+
+
+    Utenom:
+
+        - Lage readme fil #Elias jobber med
+
+        - lage launch fil for alle kjørende ros noder vi trenger, #elias kan fint fikse om ingen andre vil gjøre dette:) 
+
+        - fjerne ubrukt kode/klasser/funksjoner
+
+        - har vi mye tid så er det garrantert super behov for opptimalisering/gjøre robot mer smooth i bevegelsene. 
