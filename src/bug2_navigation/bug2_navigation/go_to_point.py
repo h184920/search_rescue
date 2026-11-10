@@ -63,8 +63,9 @@ class go_to_point(Node):
         d_yaw = onsket_yaw - self.yaw #delta yaw
         yaw_off_target = math.atan2(math.sin(d_yaw), math.cos(d_yaw)) #hvor mye offcorse den er fra target
 
-        if avstand < 0.1:
-            pass
+        if avstand < 0.15:
+            pass 
+            
 
         elif abs(yaw_off_target) > 0.3: #tweak for mer smoothnes i at den ikke skal måtte overskinge så mye 
             if yaw_off_target > 0:

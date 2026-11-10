@@ -7,6 +7,7 @@ from std_srvs.srv import SetBool
 from tf_transformations import euler_from_quaternion
 from geometry_msgs.msg import Point
 import math
+from geometry_msgs.msg import Twist
 
 import time 
 from rclpy.action import ActionServer
@@ -33,6 +34,8 @@ class bug2_controller(Node):
         self.distanceFront = 5.0
         self.distanceLastLine = 0.0
 
+        self.spinning_publisher = self.create_publisher(Twist, "/cmd_vel", 10)
+        
         self.GTPclient = self.create_client(GoToPoint, "go_to_point_bryter")
         self.WFclient = self.create_client(SetBool, "wall_follower_bryter")
 
@@ -76,6 +79,14 @@ class bug2_controller(Node):
                 feedbavk.current_position = self.position
                 goal_handle.publish_feedback(feedbavk)
             time.sleep(0.5)
+
+        twister = Twist()
+        twister.angular.z = 0.35 * math.pi
+        self.spinning_publisher.publish(twister)            
+        time.sleep(5)
+        twister.angular.z = 0.0
+        self.spinning_publisher.publish(twister)
+        self.get_logger().info("Ferdig med 360 scan")
 
         self.aktivtMaal = False
         goal_handle.succeed()
