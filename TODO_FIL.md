@@ -8,7 +8,7 @@ Igjen å gjøre:
 
     - Endre navn på ting
 
-    - Superkontroller: Koble opp superkontroller logikk for styring av robottene.
+    - Superkontroller: Koble opp superkontroller logikk for styring av robottene. #Freddy og #jonas
 
         ##-1. subscriptions til tb_i/aruco_marker
 
@@ -34,7 +34,8 @@ Igjen å gjøre:
 
     - #Freddy holder på
     
-    - 
+    -    
+    - #Brage + mathias experiments. Ligger beskrivelse av hva som bør være med i felles dokumentet.  
     
     - 
 
