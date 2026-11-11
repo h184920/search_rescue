@@ -14,6 +14,6 @@ To run the project you first need to launch one of the worlds, robots and gazebo
       - ros2 launch multi_robot_challenge_23 rescue_robots_w5.launch.py
 After you have launched one of the worlds, gazebo etc you need to start the code for the robots, you will do that by running the command: 
 
-      - ros2 launch NOE_VI_MP_ENDRE_HER.py
+      - ros2 launch sokogredd sokogredd.launch.py
 
 You should now be done, and able to see the robots moving.
