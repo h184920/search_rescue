@@ -1,7 +1,7 @@
 import launch
 import launch_ros.actions
 import os 
-from launch.actions import include_launch_description
+from launch.actions import IncludeLaunchDescription
 from ament_index_python.packages import get_package_share_directory
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
@@ -12,7 +12,7 @@ def generate_launch_description():
     return launch.LaunchDescription([
 
         #ifølge en random thread jeg fant i robotoic.stackexchange.com kan man refferer til en .launch fil i en .launch fil slik som dette, gjerne endre om noen vet om en bedre måte, for dette virker komplisert:) 
-        include_launch_description(PythonLaunchDescriptionSource(os.path.join(get_package_share_directory("bug2_navigation"), "launch", "controller.launch.py"))),
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(os.path.join(get_package_share_directory("bug2_navigation"), "launch", "controller.launch.py"))),
         launch_ros.actions.Node(
             package='sokogredd',
             executable='coordinator',
