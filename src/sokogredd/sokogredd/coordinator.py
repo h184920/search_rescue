@@ -1,15 +1,14 @@
 import rclpy
+import time
+import utils as u
+import random
 from rclpy.node import Node
 from rclpy.action import ActionClient
-
 from geometry_msgs.msg import Point
 from detection.msg import Detection
 from bug2_interfaces.srv import Bug2
 from nav_msgs.msg import OccupancyGrid
 
-from time import sleep
-
-import sharingIsCaring as sic
 
 # note that
 #   tar ikke vare på punkt, men mulig
@@ -24,90 +23,85 @@ class Coordinator(Node):
 
     def __init__(self):
         super().__init__('coordinator')
-        self.canRun = True
-        self.grid = None
-        self.boundriesX, self.boundriesY = None
-        self.fireEvent = None
-        self.create_subscription(OccupancyGrid, '/map', self.receiveMap)
-        self.create_subscription(Detection, '/true_detection', self.detectionCallback)
-        self.tbTable = {i : TbSpace(i, self, Bug2, 'bug2') for i in range(2)}
+        self.__canRun = True
+        self.__mapReceived = False
+        self.__fireEvent = None
+        self.create_subscription(OccupancyGrid, '/map', self.__receiveMapCallback)
+        self.create_subscription(Detection, '/true_detection', self.__detectionCallback)
+        self.__tbTable = [TbSpace(self, i, Bug2, 'bug2') for i in range(2)]
 
     def spin(self):
-        self.parseMap()
+        self.__awaitMap()
         while not self.isDead():
             rclpy.spin_once(self)
-            if not self.fireEvent is None:
-                self.dealWithThat()
-            for tb in self.tbTable.values():
+            if not self.__fireEvent is None:
+                self.__dealWithThat()
+            for tb in self.__tbTable:
                 if not tb.isWorking():
                     tb.startWorking()
 
-    def kill(self): 
-        self.canRun = False
-
     def isDead(self):
-        return self.canRun
+        return self.__canRun
 
-    def detectionCallback(self, dMsg):
-        if dMsg.marker_id == 4:
-            self.fireEvent = dMsg
-            self.gridCopy = list(dMsg.data)
+    def kill(self): 
+        self.__canRun = False
 
-    def receiveMap(self, ogMsg):
-        self.grid = ogMsg
+    def __awaitMap(self):
+        rclpy.spin_once(self)
+        while not self.__mapReceived:
+            rclpy.spin_once(self)
+            time.sleep(0.5)
+            
+    def __dealWithThat(self):
+        finder = self.__tbTable[self.__fireEvent.tb_id]
+        finder.startWorking(self.__fireEvent.position)
+        assistant = self.__findAssistance(self.__fireEvent.tb_id)
+        assistant.startWorking(self.__fireEvent.position)
 
-    # msg .data, .info: .origion.position, .width, height, .resolution
-
-    def parseMap(self):
-        while self.grid is None:
-            sleep(0.5)
-        X, Y = self.grid.info.width, self.grid.info.height
-        self.boundriesX = []
-        self.boundriesY = []
-        for x in range(X):
-            bottom = top = False
-            for y in range(Y):
-                ybottom = X*(X-x-1) + y
-                if bottom and self.grid.data[ybottom]
-                if self.grid.data[ybottom] >= 1:
-                    bottom = True
-                    continue
-            for y in range(Y):
-                ytop = X*()
-
-
-
-
-
-
-
-
-        
-
-    def dealWithThat(self):
-        finder = self.tbTable[self.fireEvent.tb_id]
-        finder.startWorking(self.fireEvent.position)
-        assistant = self.findAssistance(self.fireEvent.tb_id)
-        assistant.startWorking(self.fireEvent.position)
-
-    def findAssistance(self, tb_id):
+    def __findAssistance(self, tb_id):
         dist = 500.0
-        x, y = self.fireEvent.position.x, self.fireEvent.position.y
-        for id, tb in self.tbTable.items():
+        x, y = self.__fireEvent.position.x, self.__fireEvent.position.y
+        for id in range(len(self.__tbTable)):
+            tb = self.__tbTable[id]
             if id == tb_id:
                 continue
             tbx, tby = tb.latestPosition.x, tb.latestPosition.y
-            tbDist = sic.distance(x, y, tbx, tby)
+            tbDist = u.distance(x, y, tbx, tby)
             if tbDist < dist:
                 theChosenOne = tb
         return theChosenOne
 
-    def LOGG(self, obj):
-        print(obj)
+    def defineGoalGenerator(self, i, ogMsg):
+        def generator():
+            h = random.randint(0, len(self.wBorders) - 1)
+            wmin, wmax = self.wBorders[h]
+            delta = (wmax - wmin)//len(self.tbTable)
+            w = random.randint(wmin + i*delta, wmin + (i+1)*delta)
+            hmin, hmax = self.hBorders[w]
+            if not (hmin < h < hmax):
+                h = random.choice((hmin, hmax))
+            return u.mapToRealPoint(ogMsg, w, h)
+        return generator
+
+    def __receiveMapCallback(self, ogMsg):
+        if self.__mapReceived:
+            return
+        if len(self.__tbTable) > 2:
+            raise Exception('that would need an update')
+        self.wBorders = u.findWBorders(ogMsg)
+        self.hBorders = u.findHBorders(ogMsg)
+        for id in range(len(self.__tbTable)):
+            self.__tbTable[id].setGoalGenerator(self.defineGoalGenerator(id, ogMsg))
+        self.canRun = True
+
+    def __detectionCallback(self, dMsg):
+        if dMsg.marker_id == 4:
+            self.__fireEvent = dMsg
+            self.gridCopy = list(dMsg.data)
 
 class TbSpace:
 
-    def __init__(self, id, node, actionType, actionName, startingPosition):
+    def __init__(self, node, id, actionType, actionName, startingPosition=Point(x=0.0, y=0.0, z=0.0)):
         self.latestPosition = startingPosition
         self.id = id
         self.goal_handle, self.goal = None, None
@@ -148,11 +142,10 @@ class TbSpace:
 
     def __resultCallback(self, node, resultFuture):
         P = resultFuture.result().result.base_position
-        distance = sic.distance(P.x, P.y, self.goal.x, self.goal.y)
+        distance = u.distance(P.x, P.y, self.goal.x, self.goal.y)
         if distance > DISTANCE_THRESHOLD - DISTANCE_THRESHOLD*0.3:
             self.startWorking(self.goal)
         self.goalHandle, self.goal = None, None
-        
         
     def __feedCallBack(self, node, feedbackMsg):
         self.latestPosition = feedbackMsg.current_position
