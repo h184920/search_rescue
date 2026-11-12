@@ -9,7 +9,7 @@ from std_msgs.msg import Int64
 from geometry_msgs.msg import Pose, Point
 from detection.msg import Detection
 
-from multi_robot_scoring.scoring_interfaces import SetMarkerPosition
+from scoring_interfaces.srv import SetMarkerPosition
 
 # todo: endre vekk fra busy wait strategi for poeng-registrering
 # ta hensyn til mulig ikke godkjent deteksjon
@@ -21,7 +21,7 @@ class DetectionFilter(Node):
         self.complete = False
         self.checked = set()   
         self.detectionBuffer = list()
-        self.create_subscription(Detection, '/detection', self.subscription_callback)
+        self.create_subscription(Detection, '/detection', self.subscription_callback, 10)
         self.filteredMarkersPub = self.create_publisher(Detection, '/true_detection', 10)
         self.points_client = self.create_client(SetMarkerPosition, '/set_marker_position')
 
@@ -60,7 +60,16 @@ class DetectionFilter(Node):
         print(obj)
 
 
+def main(args=None):
+    rclpy.init(args=args)
+    controller = DetectionFilter()
+    rclpy.spin(controller)   
+    controller.destroy_node()
+    rclpy.shutdown()
 
+
+if __name__ == '__main__':
+    main()
 
             
             

@@ -1,13 +1,13 @@
 import rclpy
 import time
-from build.sokogredd.sokogredd import utils as u
+from sokogredd import utils as u
 #import utils as u
 import random
 from rclpy.node import Node
 from rclpy.action import ActionClient
 from geometry_msgs.msg import Point
 from detection.msg import Detection
-from bug2_interfaces.srv import Bug2
+from bug2_interfaces.action import Bug2
 from nav_msgs.msg import OccupancyGrid
 
 
@@ -27,8 +27,8 @@ class Coordinator(Node):
         self.__canRun = True
         self.__mapReceived = False
         self.__fireEvent = None
-        self.create_subscription(OccupancyGrid, '/map', self.__receiveMapCallback)
-        self.create_subscription(Detection, '/true_detection', self.__detectionCallback)
+        self.create_subscription(OccupancyGrid, '/map', self.__receiveMapCallback, 10)
+        self.create_subscription(Detection, '/true_detection', self.__detectionCallback, 10)
         self.__tbTable = [TbSpace(self, i, Bug2, 'bug2') for i in range(2)]
 
     def spin(self):
@@ -151,4 +151,13 @@ class TbSpace:
     def __feedCallBack(self, node, feedbackMsg):
         self.latestPosition = feedbackMsg.current_position
 
+def main(args=None):
+    rclpy.init(args=args)
+    controller = Coordinator()
+    rclpy.spin(controller)   
+    controller.destroy_node()
+    rclpy.shutdown()
 
+
+if __name__ == '__main__':
+    main()
