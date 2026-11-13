@@ -153,7 +153,7 @@ class ClientHandler:
         return self.id
 
     def logg(self, obj):
-        self.logg(obj)
+        u.logg(obj)
 
     @locking
     def kill(self):

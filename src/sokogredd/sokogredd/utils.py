@@ -58,8 +58,25 @@ def __mapToRealY(occGrid, h):
     return O.y + cellUnit*h
 
 if __name__ == '__main__':
+    import random
 
-    assert False, 'SIDEN SIDEN'
+    def pl(liste):
+        for row in liste:
+            print(row)
+
+    occg = [[(0 if 1 < i < 4 else 0) for i in range(20)] for j in range(20)]
+    ones = [1 for i in range(20)]
+    occg.insert(2, ones)
+    occg.insert(17, ones)
+    occg.insert(18, ones)
+    for row in occg:
+        if random.randint(0, 5) != 5:
+            continue
+        j = random.randint(7, len(occg)-7)
+        length = random.randint(2, 5)
+        for i in range(length):
+            row[j] = 1
+    pl(occg)
 
 
 
