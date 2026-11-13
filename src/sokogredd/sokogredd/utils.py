@@ -21,15 +21,11 @@ def findHBorders(occGrid):
     return __findOccupancyGridBorders(occGrid, lambda w, h: (w, h), __mapToRealY)
 
 
-def randfloat(a, b):
-    return randint(int(a*100), int(b*100))/100
+def logg(loggerName, obj):
+    print('\n%s:\n%s\n'%(loggerName, str(obj).replace('\n', '\n'+' '*4)))
+ 
 
-
-def logg(instance, obj):
-    print(' %s'%(obj))
-
-
-# non-public functions
+# non-public 
 
 def __findOccupancyGridBorders(occGrid, arrangeDim, realCoordinate):
     _ = occGrid.info
@@ -60,6 +56,10 @@ def __mapToRealY(occGrid, h):
     O = occGrid.info.origin.position
     cellUnit = occGrid.info.resolution
     return O.y + cellUnit*h
+
+if __name__ == '__main__':
+
+    assert False, 'SIDEN SIDEN'
 
 
 

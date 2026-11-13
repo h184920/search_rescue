@@ -19,4 +19,7 @@ def generate_launch_description():
             package='sokogredd',
             executable='detectionFilter',
             name='detectionFilter'),
+        launch_ros.actions.Node(
+            package=''
+        )
   ])
