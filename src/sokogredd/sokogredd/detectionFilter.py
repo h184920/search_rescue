@@ -4,7 +4,7 @@ from sokogredd import utils as u
 import time
 from rclpy.node import Node
 from detection.msg import Detection
-from multi_robot_scoring.scoring_interfaces.srv import SetMarkerPosition
+from scoring_interfaces.srv import SetMarkerPosition
 
 class DetectionFilter(Node):
 
@@ -68,7 +68,7 @@ def main(args=None):
     rclpy.init(args=args)
     controller = DetectionFilter()
     try:
-        controller.spin
+        controller.spin()
     except KeyboardInterrupt:
         controller.kill()
     controller.destroy_node()
