@@ -15,8 +15,8 @@ def generate_launch_description():
             package='bug2_navigation',
             executable='wall_follower',
             name='wall_follower'),
-        launch_ros.actions.Node(
-            package='bug2_navigation',
-            executable='test_action_server',
-            name='test_action_server'),
+        #launch_ros.actions.Node(
+            #package='bug2_navigation',
+            #executable='test_action_server',
+            #name='test_action_server'),
   ])

@@ -6,27 +6,27 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from std_msgs.msg import Int64
 from geometry_msgs.msg import Pose, Point
 from detection.msg import Detection
-from multi_robot_scoring.scoring_interfaces import SetMarkerPosition
+from multi_robot_scoring.scoring_interfaces.srv import SetMarkerPosition
 
-# TODO: 
-#   endre fra busy wait strategi for poeng-registrering
-#   ta hensyn til mulig ikke godkjent deteksjon
+# TODO:
+#   logging, unntak
 
 class DetectionFilter(Node):
 
     def __init__(self):
         super().__init__('detection_filter')
-        self.__shouldSpin = False
-        self.__detections = set()   
-        self.__detectionBuffer = list()
-        self.create_subscription(Detection, '/detection', self.__subscription_callback)
-        self.__filteredMarkersPub = self.create_publisher(Detection, '/true_detection', 10)
-        self.__points_client = self.create_client(SetMarkerPosition, '/set_marker_position')
+        self.complete = False
+        self.checked = set()   
+        self.detectionBuffer = list()
+        self.create_subscription(Detection, '/detection', self.__subscription_callback, 10)
+        self.filteredMarkersPub = self.create_publisher(Detection, '/true_detection', 10)
+        self.points_client = self.create_client(SetMarkerPosition, '/set_marker_position')
 
     def spin(self):
         while not self.isFinished():
             rclpy.spin_once(self)
             self.__check_buffer()
+        self.destroy_node()
 
     def isFinished(self):
         return not self.__shouldSpin or len(self.__detections) >= 5
@@ -49,3 +49,13 @@ class DetectionFilter(Node):
             self.__filteredMarkersPub.publish(detectedPoint)
             if detectedPoint.handled:
                 self.__detections.add(detectedPoint.marker_id)
+
+def main(args=None):
+    rclpy.init(args=args)
+    controller = DetectionFilter()
+    rclpy.spin(controller)   
+    controller.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

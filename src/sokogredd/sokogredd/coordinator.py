@@ -1,22 +1,17 @@
 import rclpy
 import time
-import utils as u
+from sokogredd import utils as u
 import random
 from rclpy.node import Node
 from rclpy.action import ActionClient
 from geometry_msgs.msg import Point
 from detection.msg import Detection
-from bug2_interfaces.srv import Bug2
+from bug2_interfaces.action import Bug2
 from nav_msgs.msg import OccupancyGrid
 
-# note
-#   tar ikke vare på punkt
 # TODO:
-#   logging
-#   startposisjoner?
-#   fiks id / index froveksling
-#   håndter dobbel flamme (se, funker ikke)
-#   ta hensyn til mulig ikke godkjent deteksjon
+#   logging, unntak
+#   ta bedre hensyn til mulig ikke godkjent deteksjon
 
 DISTANCE_THRESHOLD = 1.5
 
@@ -218,3 +213,12 @@ class ClientHandler:
     def __unlock(self):
         self.__isLocked = False
 
+def main(args=None):
+    rclpy.init(args=args)
+    controller = Coordinator()
+    rclpy.spin(controller)   
+    controller.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
