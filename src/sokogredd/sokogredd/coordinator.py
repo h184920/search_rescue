@@ -141,15 +141,25 @@ class ClientHandler:
         self.__client = ActionClient(node, actionType, actionName)
         self.logg('INITIALIZED')
 
+    def locking(m):
+        def method (fles, *args, **kwargs):
+            fles.__lock()
+            result = m(fles, *args, **kwargs)
+            fles.__unlock()
+            return result
+        return method
+
     def id(self):
         return self.id
 
     def logg(self, obj):
         u.logg(self.__name, obj)
 
+    @locking
     def kill(self):
         self.__ensureCanceled()
 
+    @locking
     def startWorking(self):
         s='is to send new goal\nwill first cancel current goal if any'
         self.__ensureCanceled()
@@ -179,18 +189,21 @@ class ClientHandler:
 
     def setGoalGenerator(self, generator): 
         self.__createRandomPoint = generator
-    
+
+    @locking
     def assignBigFire(self, markerPose):
         self.logg('is assigned responsibility of fire event\n '+
                   'pose.position=%s'%(markerPose.position))
         self.__flameMarkerPose = markerPose
         self.__greenFlag = True
 
+    @locking
     def markFireComlete(self):
         self.logg('received notice of fire event completion')
         self.__flameMarkerPose = None
         self.__greenFlag = True
 
+    @locking
     def noteUnaccepted(self, markerID, markerPose):
         self.logg(('received notice of unaccepted marker\nid=%s, pose.position='+
                   '%s')%(markerID, markerPose.position))
@@ -199,6 +212,7 @@ class ClientHandler:
         if self.__flameMarkerPose is None:
             self.__greenFlag = True
 
+    @locking
     def noteAccepted(self, markerID):
         s='received notice of accepted marker\n id=%s'%(markerID)
         if self.__markerStack[-1][0] == markerID:
@@ -218,6 +232,7 @@ class ClientHandler:
         self.__goalHandle.cancel_goal_async()
         self.__goalHandle = None
 
+    @locking
     def __responseCallback(self, node, ghFuture):
         s='response callback called'
         self.__goalHandle = ghFuture.result()
@@ -229,6 +244,7 @@ class ClientHandler:
         self.logg(s+'\n .. the request was accepted')
         self.__goalHandle.get_result_async().add_done_callback(self.__resultCallback)
 
+    @locking
     def __resultCallback(self, node, resultFuture):
         s='result callback called'
         p = resultFuture.result().result.base_position
@@ -248,6 +264,14 @@ class ClientHandler:
         
     def __feedCallBack(self, node, feedbackMsg):
         self.latestPosition = feedbackMsg.current_position
+
+    def __lock(self):
+        while self.__isLocked:
+            time.sleep(0.01)
+        self.__isLocked =True
+
+    def __unlock(self):
+        self.__isLocked = False
 
 def main(args=None):
     rclpy.init(args=args)
