@@ -89,6 +89,7 @@ class ScoringClass(Node):
         else:
             self.get_logger().error("The reported position for marker "+str(request.marker_id)+"is inaccureate. The allowed accuracy is "+str(self.pos_accuracy))
             return response
+            
 
         return response
 

@@ -7,8 +7,6 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
 
-
-
     return launch.LaunchDescription([
 
         #ifølge en random thread jeg fant i robotoic.stackexchange.com kan man refferer til en .launch fil i en .launch fil slik som dette, gjerne endre om noen vet om en bedre måte, for dette virker komplisert:) 

@@ -9,13 +9,14 @@ from detection.msg import Detection
 from bug2_interfaces.srv import Bug2
 from nav_msgs.msg import OccupancyGrid
 
-
-# note that
-#   tar ikke vare på punkt, men mulig
-#   bruker ikke feedback
-# TODELO:
-#   TODO logging
-#   TODO startposisjoner
+# note
+#   tar ikke vare på punkt
+# TODO:
+#   logging
+#   startposisjoner?
+#   fiks id / index froveksling
+#   håndter dobbel flamme (se, funker ikke)
+#   ta hensyn til mulig ikke godkjent deteksjon
 
 DISTANCE_THRESHOLD = 1.5
 
@@ -24,130 +25,196 @@ class Coordinator(Node):
     def __init__(self):
         super().__init__('coordinator')
         self.__canRun = True
-        self.__mapReceived = False
-        self.__fireEvent = None
+        self.__mapDigested = False
+        self.__fireDuo = None
         self.create_subscription(OccupancyGrid, '/map', self.__receiveMapCallback)
         self.create_subscription(Detection, '/true_detection', self.__detectionCallback)
-        self.__tbTable = [TbSpace(self, i, Bug2, 'bug2') for i in range(2)]
+        self.__clientTable = [ClientHandler(self, i, Bug2, 'bug2') for i in range(2)]
 
     def spin(self):
         self.__awaitMap()
         while not self.isDead():
             rclpy.spin_once(self)
-            if not self.__fireEvent is None:
-                self.__dealWithThat()
-            for tb in self.__tbTable:
-                if not tb.isWorking():
-                    tb.startWorking()
+            if not (
+                self.__fireDuo is None 
+                or self.__fireDuo[0].isReady() 
+                or self.__fireDuo[1].isReady()
+            ):
+                a, b = self.__fireDuo
+                a.markFireComplete(), b.markFireComplete()
+            for client in self.__clientTable:
+                if client.isReady():
+                    client.startWorking()
 
     def isDead(self):
         return self.__canRun
 
-    def kill(self): 
-        self.__canRun = False
-
     def __awaitMap(self):
         rclpy.spin_once(self)
-        while not self.__mapReceived:
-            rclpy.spin_once(self)
+        while not self.__mapDigested:
             time.sleep(0.5)
-            
-    def __dealWithThat(self):
-        finder = self.__tbTable[self.__fireEvent.tb_id]
-        finder.startWorking(self.__fireEvent.position)
-        assistant = self.__findAssistance(self.__fireEvent.tb_id)
-        assistant.startWorking(self.__fireEvent.position)
+            rclpy.spin_once(self)
 
-    def __findAssistance(self, tb_id):
+    def __findAssistant(self, finderClient, position):
         dist = 500.0
-        x, y = self.__fireEvent.position.x, self.__fireEvent.position.y
-        for id in range(len(self.__tbTable)):
-            tb = self.__tbTable[id]
-            if id == tb_id:
+        x, y = position.x, position.y
+        for candidate in self.__clientTable:
+            if candidate.id == finderClient.id:
                 continue
-            tbx, tby = tb.latestPosition.x, tb.latestPosition.y
+            tbx, tby = candidate.latestPosition.x, candidate.latestPosition.y
             tbDist = u.distance(x, y, tbx, tby)
             if tbDist < dist:
-                theChosenOne = tb
-        return theChosenOne
+                theChosenOne = finderClient
+        return theChosenOne 
 
-    def defineGoalGenerator(self, i, ogMsg):
+    def __defineGoalGenerator(self, i, ogMsg, wBorders, hBorders):
         def generator():
-            h = random.randint(0, len(self.wBorders) - 1)
-            wmin, wmax = self.wBorders[h]
+            h = random.randint(0, len(wBorders) - 1)
+            wmin, wmax = wBorders[h]
             delta = (wmax - wmin)//len(self.tbTable)
             w = random.randint(wmin + i*delta, wmin + (i+1)*delta)
-            hmin, hmax = self.hBorders[w]
+            hmin, hmax = hBorders[w]
             if not (hmin < h < hmax):
                 h = random.choice((hmin, hmax))
             return u.mapToRealPoint(ogMsg, w, h)
         return generator
 
     def __receiveMapCallback(self, ogMsg):
-        if self.__mapReceived:
+        if self.__mapDigested:
             return
-        if len(self.__tbTable) > 2:
+        if len(self.__clientTable) > 2:
             raise Exception('that would need an update')
-        self.wBorders = u.findWBorders(ogMsg)
-        self.hBorders = u.findHBorders(ogMsg)
-        for id in range(len(self.__tbTable)):
-            self.__tbTable[id].setGoalGenerator(self.defineGoalGenerator(id, ogMsg))
-        self.canRun = True
+        wBorders = u.findWBorders(ogMsg)
+        hBorders = u.findHBorders(ogMsg)
+        for id in range(len(self.__clientTable)):
+            self.__clientTable[id].setGoalGenerator(self.__defineGoalGenerator(id, ogMsg, wBorders, hBorders))
+        self.__mapDigested = True
 
     def __detectionCallback(self, dMsg):
-        if dMsg.marker_id == 4:
-            self.__fireEvent = dMsg
-            self.gridCopy = list(dMsg.data)
+        client = self.__clientTabel[dMsg.tb_id]
+        if not dMsg.accepted:
+            client.noteUnaccepted(dMsg.marker_id, dMsg.pose)
+            return
+        if dMsg.marker_id != 4:
+            client.noteAccepted(dMsg.marker_id)
+            return
+        assistant = self.__findAssistant(client, dMsg.pose.position)
+        client.assignBigFire(dMsg.pose)
+        assistant.assignBigFire(dMsg.pose)
+        self.__fireDuo = (client, assistant)
 
-class TbSpace:
+
+class ClientHandler:
 
     def __init__(self, node, id, actionType, actionName, startingPosition=Point(x=0.0, y=0.0, z=0.0)):
         self.latestPosition = startingPosition
-        self.id = id
-        self.goal_handle, self.goal = None, None
-        self.client = ActionClient(node, actionType, actionName)
-        self.generateGoal = None
+        self.id = id 
+        self.__createRandomPoint = None
+        self.__locked = False
+        self.__greenFlag = False
+        self.__markerStack = list()
+        self.__pivotMarkerPose = None
+        self.__flameMarkerPose = None
+        self.__goalHandle, self.__goal = None, None
+        self.__client = ActionClient(node, actionType, actionName)
+
+    def startWorking(self):
+        self.__lock()
+        self.__ensureCanceled()
+        self.__greenFlag = False
+        if not self.__flameMarkerPose is None:
+            goal = self.__flameMarkerPose.position
+        elif not self.__pivotMarkerPose is None:
+            goal = self.__pivotMarkerPose.position
+        elif len(self.__markerStack) > 0:
+            self.__pivotMarkerPose = self.__markerStack[-1][0]
+            goal = self.__pivotMarkerPose.position
+        else:
+            goal = self.__createRandomPoint()
+        self.__goal = goal
+        request = Bug2.Request(taregt_position=goal)
+        self.__client.wait_for_server()
+        future = self.__client.send_goal_async(request, self.__feedCallBack)
+        future.add_done_callback(self.__responseCallback)
+        self.__unlock()
+
+    def isReady(self): 
+        return self.__greenFlag
+
+    def isByFire(self):
+        return self.byFire
 
     def setGoalGenerator(self, generator): 
-        self.generateGoal = generator
+        self.__createRandomPoint = generator
 
-    def startWorking(self, explicitGoal=None):
-        if explicitGoal is None and self.generateGoal is None:
-            raise Exception('%s could not assign action a goal since %s had not been '+
-            'provided a generator function and not explicit destination was provided'%self.__class__.__name__)
-        self.stopWorking()
-        self.goal = explicitGoal
-        if self.goal is None:
-            self.goal = self.generateGoal()
-        self.client.wait_for_server()
-        future = self.client.send_goal_async(self.goal, self.__feedCallBack)
-        future.add_done_callback(self.__responseCallback)
+    def assignBigFire(self, markerPose):
+        self.__lock()
+        self.__flameMarkerPose = markerPose
+        self.__greenFlag = True
+        self.__unlock()
 
-    def stopWorking(self):
-        if self.goal_handle is None:
-            self.goal = None
-            return
-        if not self.goal_handle.cancel_goal():
-            raise Exception('navigator refused to cancel goal')
-        self.goal_handle, self.goal = None, None
+    def markFireComlete(self):
+        self.__lock()
+        self.__flameMarkerPose = None
+        self.__greenFlag = True
+        self.__unlock()
 
-    def isWorking(self):
-        return not self.goal is None 
+    def noteUnaccepted(self, markerID, markerPose):
+        self.__lock()
+        self.__markerStack.append((markerID, markerPose))
+        self.__pivotMarkerPose = None
+        self.__greenFlag = True
+        self.__unlock()
 
+    def noteAccepted(self, markerID):
+        self.__lock()
+        if self.__markerStack[-1][0] == markerID:
+            self.__pivotMarkerPose = None
+        for i in range(len(self.__markerStack)):
+            if self.__markerStack[i][0] == markerID:
+                self.__markerStack.pop(i)
+                break
+        self.__unlock()
+
+    def __ensureCanceled(self):
+        if not self.__locked:
+            raise Exception('attempt to cancel goal outside locked section')
+        if self.__goalHandle is None:
+            return 
+        self.__goalHandle.cancel_goal_async()
+        self.__goalHandle = None
+        
     def __responseCallback(self, node, ghFuture):
-        self.goal_handle = ghFuture.result()
-        if not self.isWorking() or not self.goal_handle.accepted:
+        self.__lock()
+        self.__goalHandle = ghFuture.result()
+        if not self.__goalHandle.accepted:
+            self.__goalHandle, self.__goal = None, None
+            self.__greenFlag = True
             return
-        self.goal_handle.get_result_async().add_done_callback(self.__resultCallback)
+        self.__goalHandle.get_result_async().add_done_callback(self.__resultCallback)
+        self.__unlock()
 
     def __resultCallback(self, node, resultFuture):
-        P = resultFuture.result().result.base_position
-        distance = u.distance(P.x, P.y, self.goal.x, self.goal.y)
-        if distance > DISTANCE_THRESHOLD - DISTANCE_THRESHOLD*0.3:
-            self.startWorking(self.goal)
-        self.goalHandle, self.goal = None, None
+        p = resultFuture.result().result.base_position
+        self.__lock()
+        distance = u.distance(p.x, p.y, self.__goal.position.x, self.__goal.position.y)
+        self.__goalHandle, self.__goal = None, None
+        if not self.__flameMarkerPose is None and distance < DISTANCE_THRESHOLD:
+            self.__greenFlag = False
+            return
+        if not self.__pivotMarkerPose is None:
+            self.__markerStack.pop()
+        self.__greenFlag = True
+        self.__unlock()
         
     def __feedCallBack(self, node, feedbackMsg):
         self.latestPosition = feedbackMsg.current_position
 
+    def __lock(self):
+        while self.__isLocked:
+            time.sleep(0.01)
+        self.__isLocked = True
+
+    def __unlock(self):
+        self.__isLocked = False
 

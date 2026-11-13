@@ -66,8 +66,8 @@ class MarkerMapPose(Node):
             #self.marker_id_pub.publish(marker_id_msg)
             detected = Detection()
             detected.marker_id = marker_id_msg.data
-            detected.tb_id = self.namespace
-            detected.position = marker_map_pose
+            detected.tb_id = int(self.namespace.split('_')[-1])
+            detected.pose = marker_map_pose
             self.detection_publisher.publish(detected)
             
 

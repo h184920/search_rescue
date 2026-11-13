@@ -1,3 +1,4 @@
+int64 tb_id
 int64 marker_id
-string tb_id
-geometry_msgs/Point position
+geometry_msgs/Pose pose
+bool accepted
