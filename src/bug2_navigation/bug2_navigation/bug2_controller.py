@@ -34,7 +34,7 @@ class bug2_controller(Node):
         self.distanceFront = 5.0
         self.distanceLastLine = 0.0
 
-        self.spinning_publisher = self.create_publisher(Twist, "/cmd_vel", 10)
+        self.spinning_publisher = self.create_publisher(Twist, "cmd_vel", 10)
         
         self.GTPclient = self.create_client(GoToPoint, "go_to_point_bryter")
         self.WFclient = self.create_client(SetBool, "wall_follower_bryter")
@@ -45,8 +45,8 @@ class bug2_controller(Node):
         while not self.GTPclient.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("Venter på GoToPoint service ...")
 
-        self.subOdom = self.create_subscription(Odometry, "/odom", self.odom_callback, 10)
-        self.subLaser = self.create_subscription(LaserScan, "/scan", self.laser_callback, 10)
+        self.subOdom = self.create_subscription(Odometry, "odom", self.odom_callback, 10)
+        self.subLaser = self.create_subscription(LaserScan, "scan", self.laser_callback, 10)
 
         #Creates a timer definition -> during rclpy.spin() the function self.timer_callback() will be executed every 0.1 seconds
         timer_period = 0.1  # seconds

@@ -15,9 +15,9 @@ class go_to_point(Node):
         self.goal_x = None
         self.goal_y = None
 
-        self.sub = self.create_subscription(Odometry, "/odom", self.clbk_odom, 10)
+        self.sub = self.create_subscription(Odometry, "odom", self.clbk_odom, 10)
 
-        self.pub = self.create_publisher(Twist, "/cmd_vel", 10)
+        self.pub = self.create_publisher(Twist, "cmd_vel", 10)
 
         self.aktiv = False
         self.service = self.create_service(GoToPoint, "go_to_point_bryter", self.bytt_til_WF)

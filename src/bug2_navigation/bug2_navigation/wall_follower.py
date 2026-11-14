@@ -18,9 +18,9 @@ class wall_follower(Node):
         self.vegg_margin = 1.5
 
 
-        self.sub = self.create_subscription(LaserScan, "/scan", self.clbk_laser, 10)
+        self.sub = self.create_subscription(LaserScan, "scan", self.clbk_laser, 10)
 
-        self.pub = self.create_publisher(Twist, "/cmd_vel", 10)
+        self.pub = self.create_publisher(Twist, "cmd_vel", 10)
 
         #base 
         self.lidar_diagonal = 10

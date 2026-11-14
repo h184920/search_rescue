@@ -8,6 +8,7 @@ from geometry_msgs.msg import Point
 from detection.msg import Detection
 from bug2_interfaces.action import Bug2
 from nav_msgs.msg import OccupancyGrid
+from rclpy.qos import QoSDurabilityPolicy, QoSProfile, ReliabilityPolicy
 
 DISTANCE_THRESHOLD = 1.5
 
@@ -19,9 +20,10 @@ class Coordinator(Node):
         self.__canRun = True
         self.__mapDigested = False
         self.__fireDuo = None
-        self.create_subscription(OccupancyGrid, '/map', self.__receiveMapCallback, 10)
+        plis_funger = QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL, reliability=ReliabilityPolicy.RELIABLE)
+        self.create_subscription(OccupancyGrid, '/map', self.__receiveMapCallback, plis_funger)
         self.create_subscription(Detection, '/true_detection', self.__detectionCallback, 10)
-        self.__clientTable = [ClientHandler(self, i, Bug2, 'bug2') for i in range(2)]
+        self.__clientTable = [ClientHandler(self, i, Bug2, f'/tb3_{i}/bug2') for i in range(2)]
         self.logg('INITIALIZED')
 
     def logg(self, obj):
@@ -31,7 +33,7 @@ class Coordinator(Node):
         self.__awaitMap()
         self.logg('MAP HAS BEEN PARSED. STARTING')
         while not self.__isDead():
-            rclpy.spin_once(self)
+            rclpy.spin_once(self, timeout_sec=0.1)
             if not (self.__fireDuo is None 
                     or self.__fireDuo[0].isReady() 
                     or self.__fireDuo[1].isReady()):
@@ -60,7 +62,7 @@ class Coordinator(Node):
             rclpy.spin_once(self)
 
     def __isDead(self):
-        return self.__canRun
+        return not self.__canRun
 
     def __receiveMapCallback(self, ogMsg):
         if self.__mapDigested:
@@ -69,10 +71,10 @@ class Coordinator(Node):
             raise Exception('that would need an update')
         wBorders = u.findWBorders(ogMsg)
         hBorders = u.findHBorders(ogMsg)
-        self.logg('map digested with len(wBorders)=%s, len(hBorders)=%s\n'+
-                  'samples [1000000::]: \n %s\n%s'%(
-                      len(wBorders), len(hBorders), wBorders[1000000::], hBorders[1000000::])
-                )
+        #self.logg('map digested with len(wBorders)=%s, len(hBorders)=%s\n'+
+        #          'samples [1000000::]: \n %s\n%s'%(
+        #              len(wBorders), len(hBorders), wBorders[1000000::], hBorders[1000000::])
+        #        )
         for id in range(len(self.__clientTable)):
             self.__clientTable[id].setGoalGenerator(
                 self.__defineGoalGenerator(id, ogMsg, wBorders, hBorders)
@@ -83,7 +85,7 @@ class Coordinator(Node):
         def generator():
             h = random.randint(0, len(wBorders) - 1)
             wmin, wmax = wBorders[h]
-            delta = (wmax - wmin)//len(self.tbTable)
+            delta = (wmax - wmin)//len(self.__clientTable)
             w = random.randint(wmin + i*delta, wmin + (i+1)*delta)
             hmin, hmax = hBorders[w]
             if not (hmin < h < hmax):
@@ -95,7 +97,7 @@ class Coordinator(Node):
         s = 'received new detection for marker with id %s. Detected by bot_%s at %s'%(
             dMsg.marker_id, dMsg.tb_id, dMsg.pose.position
             )
-        client = self.__clientTabel[dMsg.tb_id]
+        client = self.__clientTable[dMsg.tb_id]
         if not dMsg.accepted:
             self.logg(s+'\n ! detection not accepted by server')
             client.noteUnaccepted(dMsg.marker_id, dMsg.pose)
@@ -121,6 +123,7 @@ class Coordinator(Node):
             tbx, tby = candidate.latestPosition.x, candidate.latestPosition.y
             tbDist = u.distance(x, y, tbx, tby)
             if tbDist < dist:
+                dist = tbDist
                 theChosenOne = finderClient
         return theChosenOne 
 
@@ -132,8 +135,8 @@ class ClientHandler:
         self.__id = id 
         self.__name = 'client_'+str(id)
         self.__createRandomPoint = None
-        self.__locked = False
-        self.__greenFlag = False
+        self.__isLocked = False
+        self.__greenFlag = True
         self.__markerStack = list()
         self.__pivotMarkerPose = None
         self.__flameMarkerPose = None
@@ -150,7 +153,7 @@ class ClientHandler:
         return method
 
     def id(self):
-        return self.id
+        return self.__id
 
     def logg(self, obj):
         u.logg(self.__name, obj)
@@ -179,7 +182,7 @@ class ClientHandler:
             s+='\nfree to search, generating random'
         self.logg(s+'\nRequesting action server\ngoal=(%s, %s)'%(goal.x, goal.y))
         self.__goal = goal
-        request = Bug2.Request(taregt_position=goal)
+        request = Bug2.Goal(target_position=goal)
         self.__client.wait_for_server()
         future = self.__client.send_goal_async(request, self.__feedCallBack)
         future.add_done_callback(self.__responseCallback)
@@ -198,7 +201,7 @@ class ClientHandler:
         self.__greenFlag = True
 
     @locking
-    def markFireComlete(self):
+    def markFireComplete(self):
         self.logg('received notice of fire event completion')
         self.__flameMarkerPose = None
         self.__greenFlag = True
@@ -225,7 +228,7 @@ class ClientHandler:
         self.logg(s+'\n! but marker was not found in stack')
 
     def __ensureCanceled(self):
-        if not self.__locked:
+        if not self.__isLocked:
             raise Exception('attempt to cancel goal outside locked section')
         if self.__goalHandle is None:
             return 
@@ -233,7 +236,7 @@ class ClientHandler:
         self.__goalHandle = None
 
     @locking
-    def __responseCallback(self, node, ghFuture):
+    def __responseCallback(self, ghFuture):
         s='response callback called'
         self.__goalHandle = ghFuture.result()
         if not self.__goalHandle.accepted:
@@ -245,10 +248,10 @@ class ClientHandler:
         self.__goalHandle.get_result_async().add_done_callback(self.__resultCallback)
 
     @locking
-    def __resultCallback(self, node, resultFuture):
+    def __resultCallback(self, resultFuture):
         s='result callback called'
         p = resultFuture.result().result.base_position
-        distance = u.distance(p.x, p.y, self.__goal.position.x, self.__goal.position.y)
+        distance = u.distance(p.x, p.y, self.__goal.x, self.__goal.y)
         self.__goalHandle, self.__goal = None, None
         if not self.__flameMarkerPose is None and distance < DISTANCE_THRESHOLD:
             self.logg(s+'\n! Engaged in fire event\n .. and the computed distance from the goal '+
@@ -262,8 +265,8 @@ class ClientHandler:
         self.logg(s+'\nready for next task\ndistance from goal position was %s'%(distance))
         self.__greenFlag = True
         
-    def __feedCallBack(self, node, feedbackMsg):
-        self.latestPosition = feedbackMsg.current_position
+    def __feedCallBack(self, feedbackMsg):
+        self.latestPosition = feedbackMsg.feedback.current_position
 
     def __lock(self):
         while self.__isLocked:

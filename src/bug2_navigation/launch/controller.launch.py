@@ -5,16 +5,29 @@ def generate_launch_description():
     return launch.LaunchDescription([
         launch_ros.actions.Node(
             package='bug2_navigation',
-            executable='bug2_controller',
-            name='bug2_controller'),
-        launch_ros.actions.Node(
-            package='bug2_navigation',
             executable='go_to_point',
-            name='go_to_point'),
+            namespace='tb3_0'),
         launch_ros.actions.Node(
             package='bug2_navigation',
             executable='wall_follower',
-            name='wall_follower'),
+            namespace='tb3_1'),
+        launch_ros.actions.Node(
+            package='bug2_navigation',
+            executable='bug2_controller',
+            namespace='tb3_0'),
+        launch_ros.actions.Node(
+            package='bug2_navigation',
+            executable='go_to_point',
+            namespace='tb3_1'),
+        launch_ros.actions.Node(
+            package='bug2_navigation',
+            executable='wall_follower',
+            namespace='tb3_0'),
+        launch_ros.actions.Node(
+            package='bug2_navigation',
+            executable='bug2_controller',
+            namespace='tb3_1'),
+        
         #launch_ros.actions.Node(
             #package='bug2_navigation',
             #executable='test_action_server',

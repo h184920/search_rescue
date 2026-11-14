@@ -31,7 +31,7 @@ class DetectionFilter(Node):
         u.logg(self.__name, obj)
 
     def isDead(self):
-        return not self.__wasKilled or len(self.__detections) >= 5
+        return self.__wasKilled or len(self.__detections) >= 5
 
     def kill(self):
         self.__wasKilled = True
