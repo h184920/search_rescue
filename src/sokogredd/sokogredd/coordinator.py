@@ -27,7 +27,7 @@ class Coordinator(Node):
         self.logg('INITIALIZED')
 
     def logg(self, obj):
-        u.logg(self.__name, obj)
+        self.get_logger().info(u.logg(self.__name, obj))
 
     def spin(self):
         self.__awaitMap()
@@ -39,7 +39,8 @@ class Coordinator(Node):
                     or self.__fireDuo[1].isReady()):
                 self.logg('big fire determined complete')
                 a, b = self.__fireDuo
-                a.markFireComplete(), b.markFireComplete()
+                a.markFireComplete()
+                b.markFireComplete()
                 self.__fireDuo = None
             for client in self.__clientTable:
                 if not client.isReady():
@@ -67,14 +68,14 @@ class Coordinator(Node):
     def __receiveMapCallback(self, ogMsg):
         if self.__mapDigested:
             return
-        if len(self.__clientTable) > 2:
+        if len(self.__clientTable) > 2: 
             raise Exception('that would need an update')
         wBorders = u.findWBorders(ogMsg)
         hBorders = u.findHBorders(ogMsg)
-        #self.logg('map digested with len(wBorders)=%s, len(hBorders)=%s\n'+
-        #          'samples [1000000::]: \n %s\n%s'%(
-        #              len(wBorders), len(hBorders), wBorders[1000000::], hBorders[1000000::])
-        #        )
+        self.logg('map digested with len(wBorders)=%s, len(hBorders)=%s\n'+
+                  'samples [1000000::]: \n %s\n%s'%(
+                      len(wBorders), len(hBorders), wBorders[1000000::], hBorders[1000000::])
+                )
         for id in range(len(self.__clientTable)):
             self.__clientTable[id].setGoalGenerator(
                 self.__defineGoalGenerator(id, ogMsg, wBorders, hBorders)
@@ -87,7 +88,7 @@ class Coordinator(Node):
             wmin, wmax = wBorders[h]
             delta = (wmax - wmin)//len(self.__clientTable)
             w = random.randint(wmin + i*delta, wmin + (i+1)*delta)
-            hmin, hmax = hBorders[w]
+            hmin, hmax = hBorders[w] 
             if not (hmin < h < hmax):
                 h = random.choice((hmin, hmax))
             return u.mapToRealPoint(ogMsg, w, h)

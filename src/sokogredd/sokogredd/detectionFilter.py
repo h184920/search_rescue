@@ -35,7 +35,7 @@ class DetectionFilter(Node):
 
     def kill(self):
         self.__wasKilled = True
-
+ 
     def __subscription_callback(self, detectionMsg):
         s='DETECTION RECEIVED\n'
         if detectionMsg.marker_id in self.__detections:

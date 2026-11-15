@@ -23,7 +23,7 @@ def findHBorders(occGrid):
 
 
 def logg(loggerName, obj):
-    print('\n%s:\n%s\n'%(loggerName, str(obj).replace('\n', '\n'+' '*4)))
+    return '\n%s:\n%s\n'%(loggerName, str(obj).replace('\n', '\n'+' '*4))
  
 
 # non-public 
