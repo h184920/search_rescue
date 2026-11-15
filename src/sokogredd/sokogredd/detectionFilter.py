@@ -17,6 +17,9 @@ class DetectionFilter(Node):
         self.create_subscription(Detection, '/detection', self.__subscription_callback, 10)
         self.__filteredMarkersPub = self.create_publisher(Detection, '/true_detection', 10)
         self.__points_client = self.create_client(SetMarkerPosition, '/set_marker_position')
+        while not self.__points_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info("Venter på __points_client service ....")
+
         self.logg('INITIALIZED')
 
     def spin(self):
@@ -24,7 +27,7 @@ class DetectionFilter(Node):
         while not self.isDead():
             rclpy.spin_once(self)
             self.__check_buffer()
-            time.sleep(1.0)
+            #time.sleep(1.0)
         self.logg('IS DEAD')
 
     def logg(self, obj):
@@ -49,16 +52,19 @@ class DetectionFilter(Node):
         while len(self.__detectionBuffer) != 0:
             s+='\nsending next detection to server'
             detectedPoint = self.__detectionBuffer.pop()
-            future = self.__points_client.call_async(SetMarkerPosition(
+            future = self.__points_client.call_async(SetMarkerPosition.Request(
                 marker_id=detectedPoint.marker_id, 
                 marker_position=detectedPoint.pose.position
             ))
-            while not future.done():
-                continue
-            detectedPoint.handled = future.result().accepted
+            rclpy.spin_until_future_complete(self, future, timeout_sec=5.0)
+            if not future.done():
+                self.get_logger().info("timeout på /set_marker_posision")
+                self.__detectionBuffer.append(detectedPoint)
+                break
+            detectedPoint.accepted = future.result().accepted
             self.__filteredMarkersPub.publish(detectedPoint)
             ds = '\n  detection not accepted'
-            if detectedPoint.handled:
+            if detectedPoint.accepted:
                 ds = '\n  detection accepted'
                 self.__detections.add(detectedPoint.marker_id)
             s+=ds

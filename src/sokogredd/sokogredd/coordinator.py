@@ -124,7 +124,7 @@ class Coordinator(Node):
             tbDist = u.distance(x, y, tbx, tby)
             if tbDist < dist:
                 dist = tbDist
-                theChosenOne = finderClient
+                theChosenOne = candidate
         return theChosenOne 
 
 
@@ -174,7 +174,7 @@ class ClientHandler:
             goal = self.__pivotMarkerPose.position
             s+='\nattempting to capture unaccepted marker'
         elif len(self.__markerStack) > 0:
-            self.__pivotMarkerPose = self.__markerStack[-1][0]
+            self.__pivotMarkerPose = self.__markerStack[-1][1]
             goal = self.__pivotMarkerPose.position
             s+='\nhad undetected marker registered'
         else:
@@ -218,7 +218,7 @@ class ClientHandler:
     @locking
     def noteAccepted(self, markerID):
         s='received notice of accepted marker\n id=%s'%(markerID)
-        if self.__markerStack[-1][0] == markerID:
+        if self.__markerStack[-1][0] == markerID and self.__markerStack:
             self.__pivotMarkerPose = None
         for i in range(len(self.__markerStack)):
             if self.__markerStack[i][0] == markerID:
