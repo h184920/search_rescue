@@ -9,7 +9,7 @@ def generate_launch_description():
             namespace='tb3_0'),
         launch_ros.actions.Node(
             package='bug2_navigation',
-            executable='wall_follower',
+            executable='wallfollower_controller',
             namespace='tb3_1'),
         launch_ros.actions.Node(
             package='bug2_navigation',
@@ -21,7 +21,7 @@ def generate_launch_description():
             namespace='tb3_1'),
         launch_ros.actions.Node(
             package='bug2_navigation',
-            executable='wall_follower',
+            executable='wallfollower_controller',
             namespace='tb3_0'),
         launch_ros.actions.Node(
             package='bug2_navigation',

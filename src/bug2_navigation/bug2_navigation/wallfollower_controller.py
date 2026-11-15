@@ -3,30 +3,29 @@ from rclpy.node import Node
 
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
-from rclpy.qos import qos_profile_sensor_data as fin
 
 from std_srvs.srv import SetBool
 
 import math as m
 
-TEST = True
+TEST = False
 
 scale = 1.0
 
-momentum = 0.45
+momentum = 0.8
 L1 = scale*momentum * 1.24
 L2 = scale*momentum * 1.53
 L3 = scale*momentum * 1.8
 L4 = scale*momentum * 1.8
 
-sharpness = 0.7
-STRAIGHT_SCALAR = scale*sharpness * 0.65
+sharpness = 1.0
+STRAIGHT_SCALAR = scale*sharpness * 0.75
 INNER_SWING_LIN = scale*sharpness * 0.45
-INNER_SWING_ANG = scale*sharpness * 0.8
-OUTER_SWING_LIN = scale*sharpness * 0.05
-OUTER_SWING_ANG = scale*sharpness * (-1) * 1.0
+INNER_SWING_ANG = scale*sharpness * 0.75
+OUTER_SWING_LIN = scale*sharpness * 0.35
+OUTER_SWING_ANG = scale*sharpness * (-1) * 0.95
 
-MARGIN = 0.75
+MARGIN = 0.6
 ANGLE_SMALL = 30
 ANGLE_LARGE = 30
 
@@ -36,7 +35,7 @@ class WallfollowerController(Node):
 
     def __init__(self, active=False):
         super().__init__("wallfollower")
-        self.sub = self.create_subscription(LaserScan, "scan", self.laser_callback, fin)
+        self.sub = self.create_subscription(LaserScan, "scan", self.laser_callback, 10)
         self.pub = self.create_publisher(Twist, "cmd_vel", 10)
         self.active = active
         self.timer = self.create_timer(0.1, self.publish_twist)
@@ -141,7 +140,7 @@ def flip_index(ang):
 def rotation(orthagonal, diagonal, angle):
     orthagonal = round(orthagonal, 1)
     diagonal = round(diagonal, 1)
-    return m.atan((diagonal*m.cos(angle) - orthagonal)/(diagonal*m.sin(angle) + 0.05))
+    return m.atan((diagonal*m.cos(angle) - orthagonal)/(diagonal*m.sin(angle)))
 
 def main(args=None):
     print(f"running wallfollower: active={TEST}")

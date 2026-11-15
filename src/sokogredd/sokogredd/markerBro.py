@@ -30,8 +30,10 @@ class markerBro(Node):
         for markerId, pose in zip(msg.marker_ids, msg.poses):
             frem = pose.position.z 
             venstre = -pose.position.x
-
-            self.get_logger().info(f"framme= {frem}, venstre={venstre}, yaw={math.degrees(self.yaw)}. Robot={self.x}, {self.y}")
+            
+            if frem < 1.5: #for å ikke spamme terminalen like mye 
+                self.get_logger().info(f"framme= {frem}, venstre={venstre}, yaw={math.degrees(self.yaw)}. Robot={self.x}, {self.y}")
+            
             if frem > 2.0:
                 continue
             
