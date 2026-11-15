@@ -26,7 +26,8 @@ setup(
     entry_points={
         'console_scripts': [
             "coordinator = sokogredd.coordinator:main",
-            "detectionFilter = sokogredd.detectionFilter:main"
+            "detectionFilter = sokogredd.detectionFilter:main",
+            "markerBro = sokogredd.markerBro:main",
         ],
     },
 )

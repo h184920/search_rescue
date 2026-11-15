@@ -13,6 +13,10 @@
   <test_depend>python3-pytest</test_depend>
 
   <depend>bug2_navigation</depend>
+  <depend>detection</depend>
+  <depend>ros2_aruco_interfaces</depend>
+  <depend>nav_msgs</depend>
+
 
 
   <export>
