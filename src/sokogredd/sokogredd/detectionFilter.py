@@ -14,7 +14,7 @@ class DetectionFilter(Node):
         self.__detections = set()  
         self.__wasKilled = False 
         self.__detectionBuffer = list()
-        self.create_subscription(Detection, '/detection', self.__subscription_callback, 10)
+        self.create_subscription(Detection,  '/detection', self.__subscription_callback, 10)
         self.__filteredMarkersPub = self.create_publisher(Detection, '/true_detection', 10)
         self.__points_client = self.create_client(SetMarkerPosition, '/set_marker_position')
         while not self.__points_client.wait_for_service(timeout_sec=1.0):
@@ -44,7 +44,7 @@ class DetectionFilter(Node):
         if detectionMsg.marker_id in self.__detections:
             self.logg(s+' was already known and accepted marker.. PASS')
             return
-        self.logg(s+' adding it to buffer')
+        self.logg(s+' adding it to buffer') 
         self.__detectionBuffer.append(detectionMsg)
 
     def __check_buffer(self):

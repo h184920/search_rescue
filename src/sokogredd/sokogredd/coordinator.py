@@ -72,8 +72,8 @@ class Coordinator(Node):
             raise Exception('that would need an update')
         wBorders = u.findWBorders(ogMsg)
         hBorders = u.findHBorders(ogMsg)
-        self.logg('map digested with len(wBorders)=%s, len(hBorders)=%s\n'+
-                  'samples [1000000::]: \n %s\n%s'%(
+        self.logg(('map digested with len(wBorders)=%s, len(hBorders)=%s\n'+
+                  'samples [1000000::]: \n %s\n%s')%(
                       len(wBorders), len(hBorders), wBorders[1000000::], hBorders[1000000::])
                 )
         for id in range(len(self.__clientTable)):
