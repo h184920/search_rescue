@@ -26,7 +26,7 @@ INNER_SWING_ANG = scale*sharpness * 0.8
 OUTER_SWING_LIN = scale*sharpness * 0.05
 OUTER_SWING_ANG = scale*sharpness * (-1) * 1.0
 
-MARGIN = 0.25
+MARGIN = 0.75
 ANGLE_SMALL = 30
 ANGLE_LARGE = 30
 
@@ -36,11 +36,11 @@ class WallfollowerController(Node):
 
     def __init__(self, active=False):
         super().__init__("wallfollower")
-        self.sub = self.create_subscription(LaserScan, "/scan", self.laser_callback, fin)
-        self.pub = self.create_publisher(Twist, "/cmd_vel", 10)
+        self.sub = self.create_subscription(LaserScan, "scan", self.laser_callback, fin)
+        self.pub = self.create_publisher(Twist, "cmd_vel", 10)
         self.active = active
         self.timer = self.create_timer(0.1, self.publish_twist)
-        self.server = self.create_service(SetBool, "wallfollow_switch", self.respond_to_switch)
+        self.server = self.create_service(SetBool, "wall_follower_bryter", self.respond_to_switch)
         self.L0 = self.L1 = self.L2 = self.L3 = self.L4 = 3.5
         self.ang1, self.ang2, self.ang3, self.ang4 = ang1, ang2, ang3, ang4
         self.rightwall = 1
