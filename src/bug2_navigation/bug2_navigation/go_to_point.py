@@ -49,7 +49,9 @@ class go_to_point(Node):
         return response
 
     def timer_callback(self):
-
+        if self.position is None:
+            return 
+        
         if not self.aktiv:
             return
 

@@ -30,9 +30,11 @@ class markerBro(Node):
         for markerId, pose in zip(msg.marker_ids, msg.poses):
             frem = pose.position.z 
             venstre = -pose.position.x
-            if frem > 1.5 or self.turn > 0.2:
-                continue
+
             self.get_logger().info(f"framme= {frem}, venstre={venstre}, yaw={math.degrees(self.yaw)}. Robot={self.x}, {self.y}")
+            if frem > 2.0:
+                continue
+            
             detec = Detection()
             detec.tb_id = self.tb_id
             detec.marker_id = int(markerId)
