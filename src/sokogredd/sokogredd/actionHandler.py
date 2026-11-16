@@ -32,7 +32,7 @@ class ActionHandler(Node):
         self.__goalClient = self.create_client(GoalPose, '/goal_assignment')
         self.__teamupClient = ActionClient(self, Teamup, 'teamup')
         self.__bug2Client = ActionClient(self, Bug2, 'bug2')
-        self.logg('Initialized')
+        self.__logg('Initialized')
 
     def __flagCB(self, fMsg):
         if fMsg.green:
