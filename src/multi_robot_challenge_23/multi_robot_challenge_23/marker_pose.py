@@ -5,7 +5,7 @@ from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
-from ros2_aruco.ros2_aruco_interfaces.msg import ArucoMarkers
+from ros2_aruco_interfaces.msg import ArucoMarkers
 from geometry_msgs.msg import Pose
 from std_msgs.msg import Int64
 
@@ -26,7 +26,7 @@ class MarkerMapPose(Node):
         self.marker_recieved = False 
 
         self.marker_recognition_sub = self.create_subscription(ArucoMarkers, '/'+self.namespace+'/aruco_markers', self.clbk_marker_recognition, 10)
-        self.detection_publisher = self.create_publisher(Detection, '/detection')
+        self.detection_publisher = self.create_publisher(Detection, '/detection', 10)
         #self.marker_map_pose_pub = self.create_publisher(Pose, '/'+self.namespace+'/marker_map_pose', 10)
         #self.marker_id_pub = self.create_publisher(Int64,'/'+self.namespace+'/marker_id', 10)
 
@@ -53,19 +53,20 @@ class MarkerMapPose(Node):
         try:
             self.trans_camera_map = self.tf_buffer.lookup_transform(to_frame_rel, from_frame_rel, rclpy.time.Time())
         except TransformException as ex:
-            self.get_logger().info(
-                f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
+            # self.get_logger().info(
+            #     f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
             return
 
         #Tranform a Pose from from_frame_rel to to_frame_rel
         marker_map_pose = tf2_geometry_msgs.do_transform_pose(self.marker_pose, self.trans_camera_map)
 
         if self.marker_id != 1000:
-            #self.marker_map_pose_pub.publish(marker_map_pose)
-            #marker_id_msg.data = self.marker_id
-            #self.marker_id_pub.publish(marker_id_msg)
+            self.get_logger().info('men det funket egentlig')
+            # self.marker_map_pose_pub.publish(marker_map_pose)
+            # marker_id_msg.data = self.marker_id
+            # self.marker_id_pub.publish(marker_id_msg)
             detected = Detection()
-            detected.marker_id = marker_id_msg.data
+            detected.marker_id = self.marker_id
             detected.tb_id = int(self.namespace.split('_')[-1])
             detected.pose = marker_map_pose
             self.detection_publisher.publish(detected)

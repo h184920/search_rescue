@@ -21,7 +21,7 @@ class Coordinator(Node):
         self.__mapDigested = False
         self.__fireDuo = None
         plis_funger = QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL, reliability=ReliabilityPolicy.RELIABLE)
-        self.create_subscription(OccupancyGrid, '/map', self.__receiveMapCallback, plis_funger)
+        self.create_subscription(OccupancyGrid, 'map', self.__receiveMapCallback, plis_funger)
         self.create_subscription(Detection, '/true_detection', self.__detectionCallback, 10)
         self.__clientTable = [ClientHandler(self, i, Bug2, f'/tb3_{i}/bug2') for i in range(2)]
         self.logg('INITIALIZED')

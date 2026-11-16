@@ -8,13 +8,15 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 def generate_launch_description():
 
     return launch.LaunchDescription([
-
         #ifølge en random thread jeg fant i robotoic.stackexchange.com kan man refferer til en .launch fil i en .launch fil slik som dette, gjerne endre om noen vet om en bedre måte, for dette virker komplisert:) 
         launch_ros.actions.Node(
             package='scoring',
             executable='scoring',
             name='scoring'),
-        IncludeLaunchDescription(PythonLaunchDescriptionSource(os.path.join(get_package_share_directory("bug2_navigation"), "launch", "controller.launch.py"))),
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(os.path.join(
+            get_package_share_directory("bug2_navigation"), "launch", "controller.launch.py"))),
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(os.path.join(
+            get_package_share_directory("bug2_navigation"), "launch", "controller.launch.py"))),
         launch_ros.actions.Node(
             package='sokogredd',
             executable='coordinator',
@@ -23,18 +25,18 @@ def generate_launch_description():
             package='sokogredd',
             executable='detectionFilter',
             name='detectionFilter'),
-        launch_ros.actions.Node(
-            package='sokogredd',
-            executable='markerBro',
-            name='markerBro',
-            namespace='tb3_0',
-            parameters=[{'tb_id': 0}]),
-        launch_ros.actions.Node(
-            package='sokogredd',
-            executable='markerBro',
-            name='markerBro',
-            namespace='tb3_1',
-            parameters=[{'tb_id': 1}]),
+        # launch_ros.actions.Node(
+        #     package='sokogredd',
+        #     executable='markerBro',
+        #     name='markerBro',
+        #     namespace='tb3_0',
+        #     parameters=[{'tb_id': 0}]),
+        # launch_ros.actions.Node(
+        #     package='sokogredd',
+        #     executable='markerBro',
+        #     name='markerBro',
+        #     namespace='tb3_1',
+        #     parameters=[{'tb_id': 1}]),
 
 
 
