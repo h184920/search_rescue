@@ -27,10 +27,10 @@ class Coordinator(Node):
         plis_funger = QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL, reliability=ReliabilityPolicy.RELIABLE)
         self.create_subscription(OccupancyGrid, '/map', self.__receiveMapCB, plis_funger)
         self.__flag = self.create_publisher(JustBool, '/run_flag', 10)
-        self.__pubTable = {id: self.create_publisher(Detection, '/'+id+'/new_detection', 10) for id in TBIDS}
+        self.__pubTable = {id: self.create_publisher(Detection, id+'/new_detection', 10) for id in TBIDS}
         self.create_subscription(Detection, '/true_detection', self.__detectionCB, 10)
         self.__pointsService = self.create_service(GoalPose, '/goal_assignment', self.__assignGoalCB)
-        self.__teamupTable = {id: ActionServer(self, Teamup, '/'+id+'/teamup', self.__teamupActionCB) for id in TBIDS}
+        self.__teamupTable = {ns: ActionServer(self, Teamup, ns+'/teamup', self.__teamupActionCB) for ns in TBIDS}
         self.__logg('Initialized')
 
     def __receiveMapCB(self, ogMsg):

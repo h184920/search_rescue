@@ -19,13 +19,15 @@ from bug2_interfaces.action import Bug2
 class bug2_controller(Node):
     def __init__(self) -> None:
         super().__init__("bug2_controller")
+        self.declare_parameter('namespace')
+        self.namespace = self.get_parameter('namespace').get_parameter_value().string_value
 
         self.tilstand = None #starter vell alltid med go_to_point 
 
         self.goalX = None
         self.goalY = None 
         self.aktivtMaal = False
-        self.actionServer = ActionServer(self, Bug2, "bug2", execute_callback=self.execute_callback, callback_group=ReentrantCallbackGroup())
+        self.actionServer = ActionServer(self, Bug2, self.namespace+"/bug2", execute_callback=self.execute_callback, callback_group=ReentrantCallbackGroup())
 
         self.startX = None
         self.startY = None

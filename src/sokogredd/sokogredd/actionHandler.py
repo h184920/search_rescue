@@ -28,20 +28,20 @@ class ActionHandler(Node):
         self.__currentGoalHandle, self.__validGoalID = None, -1
         self.__latestPosition = Point(x=0.0, y=0.0, z=0.0)
         self.create_subscription(JustBool, '/run_flag', self.__flagCB, 10)
-        self.create_subscription(Detection, '/new_detection', self.__detectionCB, 10)
+        self.create_subscription(Detection, 'new_detection', self.__detectionCB, 10)
         self.__goalClient = self.create_client(GoalPose, '/goal_assignment')
-        self.__teamupClient = ActionClient(self, Teamup, 'teamup')
-        self.__bug2Client = ActionClient(self, Bug2, 'bug2')
+        self.__teamupClient = ActionClient(self, Teamup, self.namespace+'/teamup')
+        self.__bug2Client = ActionClient(self, Bug2, self.namespace+'/bug2')
         self.__logg('teamup service is ready')
-        self.__waitForServer(self.__goalClient, self.namespace+'/goalService')
-        self.__waitForServer(self.__teamupClient, self.namespace+'/teamup')
-        self.__waitForServer(self.__goalClient, self.namespace+'/bug2')
+        self.__waitForServer(self.__goalClient.wait_for_service, 'goal_assignment')
+        self.__waitForServer(self.__teamupClient.wait_for_server, self.namespace+'/teamup')
+        self.__waitForServer(self.__bug2Client.wait_for_server, self.namespace+'/bug2')
         self.__logg('Initialized')
 
-    def __waitForServer(self, client, name):
-        while not client.wait_for_server(timeout_sec=0.5):
+    def __waitForServer(self, callable, name):
+        while not callable(timeout_sec=0.5):
             self.__logg('waiting for %s'%(name))
-        self.__logg('%s is ready')%(name)
+        self.__logg('%s is ready'%(name))
 
     def __flagCB(self, fMsg):
         if fMsg.green:
@@ -103,15 +103,15 @@ class ActionHandler(Node):
         self.__sendGoal()
 
     def __defineBug2ResponseCB(self, goalHandleID):
-        def responseCB(oneself, futureResponse):
+        def responseCB(futureResponse):
             logg = 'response arrived form goal request for goal(id=%s)'%goalHandleID
             goalHandle = futureResponse.result()
-            if not oneself.__receiveHandle(oneself, goalHandle, goalHandleID):
-                oneself.__logg(logg + 'was no longer valid. Aborting')
+            if not self.__receiveHandle(goalHandle, goalHandleID):
+                self.__logg(logg + 'was no longer valid. Aborting')
                 return
-            oneself.__logg(logg + 'was still valid. Proceeding')
+            self.__logg(logg + 'was still valid. Proceeding')
             futureResult = goalHandle.get_result_async()
-            futureResult.add_done_callback(oneself.__bug2ResultCB)
+            futureResult.add_done_callback(self.__bug2ResultCB)
         return responseCB
 
     def __teamupResponseCB(self, futureTeamup):
