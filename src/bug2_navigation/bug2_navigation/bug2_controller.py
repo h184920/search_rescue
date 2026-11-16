@@ -162,7 +162,6 @@ class bug2_controller(Node):
      
 
     def controll_loop(self):
-
         if self.position is None or not self.aktivtMaal:
             return
 
@@ -196,10 +195,10 @@ def main(args=None):
     controller = bug2_controller()
 
     executor = MultiThreadedExecutor()
-    #executor.add_node(controller)
+    executor.add_node(controller)
     try:
-        #executor.spin()
-        rclpy.spin(controller)
+        executor.spin()
+        #rclpy.spin(controller)
     except KeyboardInterrupt:
         pass
     controller.destroy_node()

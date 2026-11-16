@@ -15,7 +15,7 @@ class DetectionFilter(Node):
         self.create_subscription(Detection,  '/detection', self.__subscription_callback, 10)
         self.__filteredMarkersPub = self.create_publisher(Detection, '/true_detection', 10)
         self.__points_client = self.create_client(SetMarkerPosition, '/set_marker_position')
-        while not self.__points_client.wait_for_service(timeout_sec=0.1):
+        while not self.__points_client.wait_for_service():
             self.get_logger().info("Venter på poengserver ....")
         self.logg('Initialized')
  
