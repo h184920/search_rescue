@@ -25,13 +25,17 @@ class ActionHandler(Node):
         self.namespace = self.get_parameter('namespace').get_parameter_value().string_value
         self.__markerStack = list()
         self.__firePose, self.__fireSent = None, False
-        self.__currentGoalHandle, self.__validGoalID = None, 0
+        self.__currentGoalHandle, self.__validGoalID = None, -1
         self.__latestPosition = Point(x=0.0, y=0.0, z=0.0)
         self.create_subscription(JustBool, '/run_flag', self.__flagCB, 10)
         self.create_subscription(Detection, '/new_detection', self.__detectionCB, 10)
         self.__goalClient = self.create_client(GoalPose, '/goal_assignment')
         self.__teamupClient = ActionClient(self, Teamup, 'teamup')
         self.__bug2Client = ActionClient(self, Bug2, 'bug2')
+        self.__teamupClient.wait_for_server(timeout_sec=0.1)
+        self.__logg('teamup service is ready')
+        self.__bug2Client.wait_for_server(timeout_sec=0.1)
+        self.__logg(self.namespace +'/bug2 is ready')
         self.__logg('Initialized')
 
     def __flagCB(self, fMsg):
@@ -93,7 +97,7 @@ class ActionHandler(Node):
         self.__fireSent = False
         self.__sendGoal()
 
-    def __defineBug2ResponseCB(goalHandleID):
+    def __defineBug2ResponseCB(self, goalHandleID):
         def responseCB(oneself, futureResponse):
             logg = 'response arrived form goal request for goal(id=%s)'%goalHandleID
             goalHandle = futureResponse.result()
@@ -183,15 +187,11 @@ class ActionHandler(Node):
 
     def __startRunning(self):
         self.__logg('starting execution')
-        if self.__isRunning():
-            return
         self.__validGoalID = 0
         self.__sendGoal()
 
     def __stopRunning(self):
         self.__logg('stopping execution')
-        if not self.__isRunning():
-            return
         self.__setGoalTo(id=-1)
 
     def __isRunning(self):

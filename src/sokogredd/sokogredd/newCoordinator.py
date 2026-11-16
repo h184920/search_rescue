@@ -29,9 +29,17 @@ class Coordinator(Node):
         self.__flag = self.create_publisher(JustBool, '/run_flag', 10)
         self.__pubTable = {id: self.create_publisher(Detection, '/'+id+'/new_detection', 10) for id in TBIDS}
         self.create_subscription(Detection, '/true_detection', self.__detectionCB, 10)
-        self.create_service(GoalPose, '/goal_assignment', self.__assignGoalCB)
+        self.__pointsService = self.create_service(GoalPose, '/goal_assignment', self.__assignGoalCB)
         self.__teamupTable = {id: ActionServer(self, Teamup, '/'+id+'/teamup', self.__teamupActionCB) for id in TBIDS}
+        while not self.__pointsService.wait_for_server(timeout_sec=0.5):
+            self.logg('waiting for pointService...')
+        
+        self.logg('pointsService is ready')
         self.logg('Initialized')
+
+    def __waitForServer(self, server):
+        while not server.wait_for_server(timeout_sec=0.5):
+            self.__logg()
 
     def __receiveMapCB(self, ogMsg):
         self.__occGrid = ogMsg
