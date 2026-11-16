@@ -14,12 +14,11 @@ class DetectionFilter(Node):
         self.__detections = set()  
         self.__wasKilled = False 
         self.__detectionBuffer = list()
-        self.create_subscription(Detection,  '/detection', self.__subscription_callback, 10)
+        self.create_subscription(Detection, '/detection', self.__subscription_callback, 10)
         self.__filteredMarkersPub = self.create_publisher(Detection, '/true_detection', 10)
         self.__points_client = self.create_client(SetMarkerPosition, '/set_marker_position')
         while not self.__points_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("Venter på __points_client service ....")
-
         self.logg('INITIALIZED')
 
     def spin(self):
@@ -31,7 +30,7 @@ class DetectionFilter(Node):
         self.logg('IS DEAD')
 
     def logg(self, obj):
-        u.logg(self.__name, obj)
+        self.get_logger().info(u.logg(self.__name, obj))
 
     def isDead(self):
         return self.__wasKilled or len(self.__detections) >= 5

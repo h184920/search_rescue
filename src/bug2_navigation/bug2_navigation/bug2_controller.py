@@ -19,8 +19,8 @@ from bug2_interfaces.action import Bug2
 class bug2_controller(Node):
     def __init__(self) -> None:
         super().__init__("bug2_controller")
-        self.declare_parameter('namespace')
-        self.namespace = self.get_parameter('namespace').get_parameter_value().string_value
+        # self.declare_parameter('namespace')
+        # self.namespace = self.get_parameter('namespace').get_parameter_value().string_value
 
         self.tilstand = None #starter vell alltid med go_to_point 
 

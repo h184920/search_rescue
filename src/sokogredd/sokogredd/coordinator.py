@@ -72,10 +72,7 @@ class Coordinator(Node):
             raise Exception('that would need an update')
         wBorders = u.findWBorders(ogMsg)
         hBorders = u.findHBorders(ogMsg)
-        self.logg(('map digested with len(wBorders)=%s, len(hBorders)=%s\n'+
-                  'samples [1000000::]: \n %s\n%s')%(
-                      len(wBorders), len(hBorders), wBorders[1000000::], hBorders[1000000::])
-                )
+        self.logg('map digested with len(wBorders), len(hBorders) = %s, %s'%(len(wBorders), len(hBorders)))
         for id in range(len(self.__clientTable)):
             self.__clientTable[id].setGoalGenerator(
                 self.__defineGoalGenerator(id, ogMsg, wBorders, hBorders)
@@ -91,7 +88,11 @@ class Coordinator(Node):
             hmin, hmax = hBorders[w] 
             if not (hmin < h < hmax):
                 h = random.choice((hmin, hmax))
-            return u.mapToRealPoint(ogMsg, w, h)
+            punkt = u.mapToRealPoint(ogMsg, w, h)
+            self.logg(punkt)
+            self.logg(wBorders)
+            self.logg(hBorders)
+            return punkt
         return generator
 
     def __detectionCallback(self, dMsg):

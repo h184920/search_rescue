@@ -26,9 +26,11 @@ class MarkerMapPose(Node):
         self.marker_recieved = False 
 
         self.marker_recognition_sub = self.create_subscription(ArucoMarkers, '/'+self.namespace+'/aruco_markers', self.clbk_marker_recognition, 10)
-        self.detection_publisher = self.create_publisher(Detection, '/detection', 10)
+        self.detection_publisher = self.create_publisher(Detection, '/xdetection', 10)
         #self.marker_map_pose_pub = self.create_publisher(Pose, '/'+self.namespace+'/marker_map_pose', 10)
         #self.marker_id_pub = self.create_publisher(Int64,'/'+self.namespace+'/marker_id', 10)
+
+        #self.get_logger().info(self.namespace+'/MarkerPose/LAUNCHET\n'*20)
 
 
         #Initialize a transform listener that is later used for looking up tranformations from one frame to another
