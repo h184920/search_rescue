@@ -31,11 +31,11 @@ class ActionHandler(Node):
         self.create_subscription(Detection, 'new_detection', self.__detectionCB, 10)
         self.__goalClient = self.create_client(GoalPose, '/goal_assignment')
         self.__teamupClient = ActionClient(self, Teamup, self.namespace+'/teamup')
-        self.__bug2Client = ActionClient(self, Bug2, self.namespace+'/bug2')
+        self.__bug2Client = ActionClient(self, Bug2, 'bug2')
         self.__logg('teamup service is ready')
         self.__waitForServer(self.__goalClient.wait_for_service, 'goal_assignment')
-        self.__waitForServer(self.__teamupClient.wait_for_server, self.namespace+'/teamup')
-        self.__waitForServer(self.__bug2Client.wait_for_server, self.namespace+'/bug2')
+        self.__waitForServer(self.__teamupClient.wait_for_server, 'teamup')
+        self.__waitForServer(self.__bug2Client.wait_for_server, 'bug2')
         self.__logg('Initialized')
 
     def __waitForServer(self, callable, name):

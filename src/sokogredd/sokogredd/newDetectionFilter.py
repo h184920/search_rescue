@@ -17,7 +17,7 @@ class DetectionFilter(Node):
         self.__points_client = self.create_client(SetMarkerPosition, '/set_marker_position')
         while not self.__points_client.wait_for_service():
             self.get_logger().info("Venter på poengserver ....")
-        self.logg('Initialized')
+        self.logg('Initialized\n'*5)
  
     def __subscription_callback(self, detectionMsg):
         s='Detection received'

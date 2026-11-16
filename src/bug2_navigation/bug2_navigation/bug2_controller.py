@@ -27,7 +27,7 @@ class bug2_controller(Node):
         self.goalX = None
         self.goalY = None 
         self.aktivtMaal = False
-        self.actionServer = ActionServer(self, Bug2, self.namespace+"/bug2", execute_callback=self.execute_callback, callback_group=ReentrantCallbackGroup())
+        self.actionServer = ActionServer(self, Bug2, "bug2", execute_callback=self.execute_callback, callback_group=ReentrantCallbackGroup())
 
         self.startX = None
         self.startY = None
