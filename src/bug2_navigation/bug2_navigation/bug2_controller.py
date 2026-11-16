@@ -194,9 +194,12 @@ def main(args=None):
     controller = bug2_controller()
 
     executor = MultiThreadedExecutor()
-    executor.add_node(controller)
-    executor.spin()
-
+    #executor.add_node(controller)
+    try:
+        #executor.spin()
+        rclpy.spin(controller)
+    except KeyboardInterrupt:
+        pass
     controller.destroy_node()
 
     rclpy.shutdown()

@@ -1,5 +1,6 @@
 geometry_msgs/Point target_position
 ---
 geometry_msgs/Point base_position 
+bool was_canceled
 ---
 geometry_msgs/Point current_position 

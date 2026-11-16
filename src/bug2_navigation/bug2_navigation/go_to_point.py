@@ -5,6 +5,7 @@ from sensor_msgs.msg import LaserScan
 from tf_transformations import euler_from_quaternion
 from nav_msgs.msg import Odometry
 from bug2_interfaces.srv import GoToPoint
+from geometry_msgs.msg import Point
 import math
 
 
@@ -21,6 +22,9 @@ class go_to_point(Node):
 
         self.aktiv = False
         self.service = self.create_service(GoToPoint, "go_to_point_bryter", self.bytt_til_WF)
+
+
+        self.position = None
 
 
         #Creates a timer definition -> during rclpy.spin() the function self.timer_callback() will be executed every 0.1 seconds
@@ -86,8 +90,10 @@ def main(args=None):
     rclpy.init(args=args)
 
     controller = go_to_point()
-
-    rclpy.spin(controller)
+    try:
+        rclpy.spin(controller)
+    except KeyboardInterrupt:
+        pass
 
     controller.destroy_node()
     rclpy.shutdown()

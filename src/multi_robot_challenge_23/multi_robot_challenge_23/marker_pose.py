@@ -61,7 +61,6 @@ class MarkerMapPose(Node):
         marker_map_pose = tf2_geometry_msgs.do_transform_pose(self.marker_pose, self.trans_camera_map)
 
         if self.marker_id != 1000:
-            self.get_logger().info('men det funket egentlig')
             # self.marker_map_pose_pub.publish(marker_map_pose)
             # marker_id_msg.data = self.marker_id
             # self.marker_id_pub.publish(marker_id_msg)

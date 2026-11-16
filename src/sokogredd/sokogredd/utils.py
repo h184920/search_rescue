@@ -23,7 +23,8 @@ def findHBorders(occGrid):
 
 
 def logg(loggerName, obj):
-    return '\n%s:\n%s\n'%(loggerName, str(obj).replace('\n', '\n'+' '*4))
+    s = '%s:\n%s\n'%(loggerName, str(obj))
+    return s.replace('\n', '\n'+' '*10)
  
 
 # non-public 
@@ -32,12 +33,10 @@ def __findOccupancyGridBorders(occGrid, arrangeDim):
     print('enter')
     _ = occGrid.info
     parallellN, orthagonalN = arrangeDim(_.width, _.height)
-    print('parallellN=', parallellN, 'orthagonalN=', orthagonalN)
     borders = []
     for p in range(parallellN):
         oStart = __findEdge(occGrid, p, orthagonalN, lambda o: o, arrangeDim)
         oStop = __findEdge(occGrid, p, orthagonalN, lambda o: orthagonalN-o-1, arrangeDim)
-        print(oStart, oStop)
         borders.append((oStart, oStop))
     return borders
 

@@ -35,6 +35,7 @@ class ScoringClass(Node):
 
         # Wait for gazebo to be running
         self.client_entity_state = self.create_client(GetEntityState, '/gazebo/get_entity_state')
+        time.sleep(10.0)
         while not self.client_entity_state.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
 

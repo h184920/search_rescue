@@ -146,6 +146,9 @@ def main(args=None):
     print(f"running wallfollower: active={TEST}")
     rclpy.init(args=args)
     wallfollower = WallfollowerController(active=TEST)
-    rclpy.spin(wallfollower)
+    try:
+        rclpy.spin(wallfollower)
+    except KeyboardInterrupt:
+        pass
     wallfollower.destroy_node()
     rclpy.shutdown()

@@ -283,7 +283,7 @@ def main(args=None):
     try:
         controller.spin()
     except KeyboardInterrupt:
-        controller.kill()
+        pass
     controller.destroy_node()
     rclpy.shutdown()
 
