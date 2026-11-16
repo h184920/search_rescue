@@ -32,11 +32,16 @@ class ActionHandler(Node):
         self.__goalClient = self.create_client(GoalPose, '/goal_assignment')
         self.__teamupClient = ActionClient(self, Teamup, 'teamup')
         self.__bug2Client = ActionClient(self, Bug2, 'bug2')
-        self.__teamupClient.wait_for_server(timeout_sec=0.1)
         self.__logg('teamup service is ready')
-        self.__bug2Client.wait_for_server(timeout_sec=0.1)
-        self.__logg(self.namespace +'/bug2 is ready')
+        self.__waitForServer(self.__goalClient, self.namespace+'/goalService')
+        self.__waitForServer(self.__teamupClient, self.namespace+'/teamup')
+        self.__waitForServer(self.__goalClient, self.namespace+'/bug2')
         self.__logg('Initialized')
+
+    def __waitForServer(self, client, name):
+        while not client.wait_for_server(timeout_sec=0.5):
+            self.__logg('waiting for %s'%(name))
+        self.__logg('%s is ready')%(name)
 
     def __flagCB(self, fMsg):
         if fMsg.green:
