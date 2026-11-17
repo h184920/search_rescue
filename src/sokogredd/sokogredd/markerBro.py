@@ -16,7 +16,7 @@ class markerBro(Node):
         self.turn = 0.0
         self.create_subscription(Odometry, "odom", self.odom_callback, 10)
         self.create_subscription(ArucoMarkers, "aruco_markers", self.aruco_callback, 10)
-        self.pub = self.create_publisher(Detection, "detection", 10)
+        self.pub = self.create_publisher(Detection, "/xdetection", 10)
 
     def odom_callback(self, msg):
         p = msg.pose.pose.position
@@ -40,7 +40,7 @@ class markerBro(Node):
             
             detec = Detection()
             detec.tb_id = self.tb_id
-            detec.marker_id = 'tb3_'+str(markerId)
+            detec.marker_id = markerId
             detec.pose.position.x = self.x + frem*math.cos(self.yaw)- venstre*math.sin(self.yaw)
             detec.pose.position.y = self.y + frem*math.sin(self.yaw) + venstre*math.cos(self.yaw)
             detec.accepted = False 

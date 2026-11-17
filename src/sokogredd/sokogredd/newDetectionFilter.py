@@ -12,7 +12,7 @@ class DetectionFilter(Node):
         super().__init__('detectionFilter')
         self.__name = 'detection_filter'
         self.__detectionIDs = set()
-        self.create_subscription(Detection, 'detection', self.__subscription_callback, 10)
+        self.create_subscription(Detection, '/detection', self.__subscription_callback, 10)
         self.__filteredMarkersPub = self.create_publisher(Detection, 'true_detection', 10)
         self.__points_client = self.create_client(SetMarkerPosition, '/set_marker_position')
         while not self.__points_client.wait_for_service():
@@ -25,15 +25,13 @@ class DetectionFilter(Node):
             self.logg(s+'\nmarkeer has already been accepted.. so pass')
             return
         self.logg(s+'\nsending it to server')
-        idStr = detectionMsg.marker_id
-        idInt = int(idStr.split('_')[-1])
         self.__points_client.call_async(SetMarkerPosition.Request(
-                marker_id=idInt, 
+                marker_id=detectionMsg.marker_id, 
                 marker_position=detectionMsg.pose.position
             )).add_done_callback(self.__scoreCB(detectionMsg))
 
     def __scoreCB(self, detection):
-        def callback(_, futurePoints):
+        def callback(futurePoints):
             s = 'detection of marker %s evaluated by server'%(detection.marker_id)
             detection.accepted = futurePoints.result().accepted
             self.__filteredMarkersPub.publish(detection)
