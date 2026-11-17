@@ -20,11 +20,11 @@ class DetectionFilter(Node):
         self.logg('Initialized\n'*5)
  
     def __subscription_callback(self, detectionMsg):
-        s='Detection received'
+        #s='Detection received'
         if detectionMsg.marker_id in self.__detectionIDs:
-            self.logg(s+'\nmarkeer has already been accepted.. so pass')
+            #self.logg(s+'\nmarkeer has already been accepted.. so pass')
             return
-        self.logg(s+'\nsending it to server')
+        self.logg('\nsending new detection to server')
         self.__points_client.call_async(SetMarkerPosition.Request(
                 marker_id=detectionMsg.marker_id, 
                 marker_position=detectionMsg.pose.position
