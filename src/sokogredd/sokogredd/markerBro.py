@@ -16,7 +16,7 @@ class markerBro(Node):
         self.turn = 0.0
         self.create_subscription(Odometry, "odom", self.odom_callback, 10)
         self.create_subscription(ArucoMarkers, "aruco_markers", self.aruco_callback, 10)
-        self.pub = self.create_publisher(Detection, "/xdetection", 10)
+        self.pub = self.create_publisher(Detection, "/detection", 10)
 
     def odom_callback(self, msg):
         p = msg.pose.pose.position

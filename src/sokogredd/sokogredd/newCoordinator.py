@@ -37,7 +37,7 @@ class Coordinator(Node):
         self.__occGrid = ogMsg
         self.__wBorders = u.findWBorders(ogMsg)
         self.__hBorders = u.findHBorders(ogMsg)
-        self.__logg('map digested with len(wBorders), len(hBorders) = %s, %s'%(len(self.__wBorders[0]), len(self.__hBorders[0])))
+        #self.__logg('map digested with len(wBorders), len(hBorders) = %s, %s'%(len(self.__wBorders[0]), len(self.__hBorders[0])))
         self.__flag.publish(JustBool(green=True))
 
     def __detectionCB(self, dMsg):
@@ -48,10 +48,10 @@ class Coordinator(Node):
             self.__pubTable[assist_id].publish(dMsg)
 
     def __assignGoalCB(self, request, response):
-        self.__logg('received request for new destination from action handler %s'%(request.tb_id))
+        #self.__logg('received request for new destination from action handler %s'%(request.tb_id))
         if not isinstance(request.tb_id, str):
             raise TypeError('goal-request had invalid namespace id of type %s'%(type(request.tb_id)))
-        self.__logg(request.tb_id.split('_'))
+        #self.__logg(request.tb_id.split('_'))
         response.goal_pose = Pose(position=self.__generateGoal(int(request.tb_id.split('_')[-1].strip())))
         return response
 
@@ -74,7 +74,7 @@ class Coordinator(Node):
         w = random.randint(wmax - dW*(i+1), wmax - dW*i)
         h = random.randint(hmax - dH*(i+1), hmax - dH*i)
         point = u.mapToRealPoint(self.__occGrid, w, h)
-        self.__logg('generated point %s'%(point))
+        self.__logg('\n\ngenerated point %s'%(point)+'\n\n')
         return point
 
     def __logg(self, obj):

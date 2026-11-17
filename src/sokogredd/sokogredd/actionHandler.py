@@ -44,36 +44,36 @@ class ActionHandler(Node):
 
     def __flagCB(self, fMsg):
         if fMsg.green:
-            self.__logg('received start signal.. starting')
+            #self.__logg('received start signal.. starting')
             self.__startRunning()
             return
-        self.__logg('recevied stop signal.. stopping')
+        #self.__logg('recevied stop signal.. stopping')
         self.__stopRunning()
 
     def __detectionCB(self, dMsg):
         logg = 'received detection message'
         if not dMsg.accepted:
-            logg += ' as unaccepted by server'
+            #logg += ' as unaccepted by server'
             self.__markerStack.append(dMsg)
         elif dMsg.marker_id == 4:
-            logg += ' as accepted marker with ID=4 !!'
+            logg += ' marker with ID=4 !!'
             self.__firePose = dMsg.pose
             self.__fireSent = False
         else: 
-            logg += ' as accepted by server'
+            logg += ' accepted by server'
             for i in range(len(self.__markerStack)):
                 if self.__markerStack[i].marker_id == dMsg.marker_id:
                     self.__markerStack.pop(i)
-                    logg += '\n  removed it from stack'
-                else:
-                    logg += '\n  not to be found in stack'
+                    #logg += '\n  removed it from stack'
+                else: pass
+                    #logg += '\n  not to be found in stack'
             self.__logg(logg)
             return
         self.__logg(logg)
         self.__sendGoal()
 
     def __randomGoalCB(self, futurePose):
-        self.__logg('response from coordinator received')
+        #self.__logg('response from coordinator received')
         self.__sendGoal(randomPose=futurePose.result().goal_pose)
 
     def __bug2ResultCB(self, future):
