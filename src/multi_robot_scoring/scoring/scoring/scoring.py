@@ -59,7 +59,7 @@ class ScoringClass(Node):
         self.odom_recieved = [True, True, True, True, True]
         self.start_time = time.time()
 
-        timer_period = 0.5  # seconds
+        timer_period = 3.0 # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
     def clbk_set_marker_pos(self, request, response):

@@ -34,23 +34,34 @@ def __findOccupancyGridBorders(occGrid, arrangeDim):
     _ = occGrid.info
     parallellN, orthagonalN = arrangeDim(_.width, _.height)
     borders = []
+    count, lock, mini, maxi = 0, False, 0, 0
     for p in range(parallellN):
         oStart = __findEdge(occGrid, p, orthagonalN, lambda o: o, arrangeDim)
         oStop = __findEdge(occGrid, p, orthagonalN, lambda o: orthagonalN-o-1, arrangeDim)
+        if oStart > oStop and count < 2:
+            if not lock:
+                count += 1
+                lock = True
+                if count == 1:
+                    mini = p
+        elif oStart < oStop:
+            if lock:
+                lock = False
+        if count == 2:
+            maxi = p
+            break
         borders.append((oStart, oStop))
-    return borders
+    return (borders, mini, maxi)
 
 def __findEdge(occGrid, p, orthagonalLen, sidePicker, arrangeDim):
     status = 0
-    o = sidePicker(0)
-    w, h = arrangeDim(p, o)
-    for i in range(1, orthagonalLen):
-        cell = occGrid.data[occGrid.info.width*h + w]
-        if status == cell: pass
-        elif not cell: break
-        status = 1
+    for i in range(orthagonalLen):
         o = sidePicker(i)
         w, h = arrangeDim(p, o)
+        cell = occGrid.data[occGrid.info.width*h + w]
+        if status == cell: continue
+        elif not cell: break
+        status = 1
     return o
 
 def __mapToRealX(occGrid, w):
@@ -65,8 +76,8 @@ def __mapToRealY(occGrid, h):
 
 if __name__ == '__main__':
     import random
-    def pl(matrix):
-        print('\n'.join([' '.join(['#' if item==1 else '*' for item in row]) for row in matrix]))
+    def pl(matrix, a='*', b='#'):
+        print('\n'.join([' '.join([b if item==1 else a for item in row]) for row in matrix]))
     m, n = 40, 45
     matrix = [[(1 if (0<j<3 or n-4<j<n-1) and 0<i<m-1 else 0) for j in range(n)] for i in range(m)]
     ones = [0, *[1 for i in range(n-2)], 0]
@@ -80,7 +91,7 @@ if __name__ == '__main__':
         j = random.choice(list(range(4, len(matrix[0])-4, 4)))
         for d in range(length):
             matrix[i0+d][j] = 1
-    pl(matrix)
+    pl(matrix, str(0), str(1))
     occg = OccupancyGrid(data=[bit for row in matrix for bit in row])
     occg.info.width, occg.info.height = len(matrix[0]), len(matrix) 
     print(findWBorders(occg))

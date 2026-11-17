@@ -8,14 +8,15 @@ from detection.msg import Detection
 class markerBro(Node):
     def __init__(self):
         super().__init__('markerBro')
-        self.tb_id = self.declare_parameter("tb_id", 0).value
+        self.tb_id = self.declare_parameter("tb_id")
+        self.namespace = self.get_parameter('namespace').get_parameter_value().string_value
         self.x = None
         self.y = None
         self.yaw = None
         self.turn = 0.0
         self.create_subscription(Odometry, "odom", self.odom_callback, 10)
         self.create_subscription(ArucoMarkers, "aruco_markers", self.aruco_callback, 10)
-        self.pub = self.create_publisher(Detection, "/detection", 10)
+        self.pub = self.create_publisher(Detection, "detection", 10)
 
     def odom_callback(self, msg):
         p = msg.pose.pose.position
@@ -39,7 +40,7 @@ class markerBro(Node):
             
             detec = Detection()
             detec.tb_id = self.tb_id
-            detec.marker_id = int(markerId)
+            detec.marker_id = 'tb3_'+str(markerId)
             detec.pose.position.x = self.x + frem*math.cos(self.yaw)- venstre*math.sin(self.yaw)
             detec.pose.position.y = self.y + frem*math.sin(self.yaw) + venstre*math.cos(self.yaw)
             detec.accepted = False 

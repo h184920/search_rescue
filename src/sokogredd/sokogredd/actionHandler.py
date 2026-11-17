@@ -27,9 +27,9 @@ class ActionHandler(Node):
         self.__firePose, self.__fireSent = None, False
         self.__currentGoalHandle, self.__validGoalID = None, -1
         self.__latestPosition = Point(x=0.0, y=0.0, z=0.0)
-        self.create_subscription(JustBool, '/run_flag', self.__flagCB, 10)
-        self.create_subscription(Detection, 'new_detection', self.__detectionCB, 10)
-        self.__goalClient = self.create_client(GoalPose, '/goal_assignment')
+        self.create_subscription(JustBool, 'run_flag', self.__flagCB, 10)
+        self.create_subscription(Detection, self.namespace+'/new_detection', self.__detectionCB, 10)
+        self.__goalClient = self.create_client(GoalPose, 'goal_assignment')
         self.__teamupClient = ActionClient(self, Teamup, self.namespace+'/teamup')
         self.__bug2Client = ActionClient(self, Bug2, self.namespace+'/bug2')
         self.__waitForServer(self.__goalClient.wait_for_service, 'goal_assignment')
@@ -78,8 +78,8 @@ class ActionHandler(Node):
 
     def __bug2ResultCB(self, future):
         logg = ' reached result callback for goal'
-        target = future.result()
-        if target.wasCanceled:
+        target = future.result().result
+        if target.was_canceled:
             self.__logg(logg+', but the goal had been canceled')
             return
         if self.__fireSent:
@@ -203,7 +203,7 @@ class ActionHandler(Node):
 
     def __logg(self, obj):
         self.get_logger().info(u.logg(
-            self.namespace+'.action_handler', obj)
+            self.namespace+'.action_handler', str(obj).upper())
             )
 
     # Single callback group. Not needed.

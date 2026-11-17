@@ -25,11 +25,11 @@ class Coordinator(Node):
         self.__wBorders, self.__hBorders = list(), list()
         self.__waitingActors = 0
         plis_funger = QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL, reliability=ReliabilityPolicy.RELIABLE)
-        self.create_subscription(OccupancyGrid, '/map', self.__receiveMapCB, plis_funger)
-        self.__flag = self.create_publisher(JustBool, '/run_flag', 10)
+        self.create_subscription(OccupancyGrid, 'map', self.__receiveMapCB, plis_funger)
+        self.__flag = self.create_publisher(JustBool, 'run_flag', 10)
+        self.create_subscription(Detection, 'true_detection', self.__detectionCB, 10)
         self.__pubTable = {id: self.create_publisher(Detection, id+'/new_detection', 10) for id in TBIDS}
-        self.create_subscription(Detection, '/true_detection', self.__detectionCB, 10)
-        self.__pointsService = self.create_service(GoalPose, '/goal_assignment', self.__assignGoalCB)
+        self.__pointsService = self.create_service(GoalPose, 'goal_assignment', self.__assignGoalCB)
         self.__teamupTable = {ns: ActionServer(self, Teamup, ns+'/teamup', self.__teamupActionCB) for ns in TBIDS}
         self.__logg('Initialized')
 
@@ -37,7 +37,7 @@ class Coordinator(Node):
         self.__occGrid = ogMsg
         self.__wBorders = u.findWBorders(ogMsg)
         self.__hBorders = u.findHBorders(ogMsg)
-        self.__logg('map digested with len(wBorders), len(hBorders) = %s, %s'%(len(self.__wBorders), len(self.__hBorders)))
+        self.__logg('map digested with len(wBorders), len(hBorders) = %s, %s'%(len(self.__wBorders[0]), len(self.__hBorders[0])))
         self.__flag.publish(JustBool(green=True))
 
     def __detectionCB(self, dMsg):
@@ -65,14 +65,14 @@ class Coordinator(Node):
         self.__waitingActors = 0
         return Teamup.Response()
 
-    def __generateGoal(self, idInt):
-        h = random.randint(10, len(self.__wBorders) - 10)
-        wmin, wmax = self.__wBorders[h]
-        delta = (wmax - wmin)//2
-        w = random.randint(wmin + idInt*delta, wmin + (idInt+1)*delta)
-        hmin, hmax = self.__hBorders[w] 
-        if not (hmin < h < hmax):
-            h = random.choice((hmin, hmax))
+    def __generateGoal(self, i):
+        wmin, wmax = self.__wBorders[1], self.__wBorders[2]
+        hmin, hmax = self.__hBorders[1], self.__hBorders[2]
+        dW = (wmax - wmin)//2
+        dH = (hmax - hmin)//2
+        self.__logg('%s, %s, %s, %s'%(wmin, wmax, hmin, hmax))
+        w = random.randint(wmax - dW*(i+1), wmax - dW*i)
+        h = random.randint(hmax - dH*(i+1), hmax - dH*i)
         point = u.mapToRealPoint(self.__occGrid, w, h)
         self.__logg('generated point %s'%(point))
         return point
