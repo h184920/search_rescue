@@ -8,8 +8,8 @@ from detection.msg import Detection
 class markerBro(Node):
     def __init__(self):
         super().__init__('markerBro')
-        self.tb_id = self.declare_parameter("tb_id")
-        self.namespace = self.get_parameter('namespace').get_parameter_value().string_value
+        self.declare_parameter("namespace")
+        self.tb_id = self.get_parameter('namespace').get_parameter_value().string_value
         self.x = None
         self.y = None
         self.yaw = None

@@ -48,15 +48,10 @@ def generate_launch_description():
             package='sokogredd',
             executable='markerBro',
             name='markerBro',
-            namespace='tb3_0',
-            parameters=[{'tb_id':'tb3_0'}]),
+            parameters=[{'namespace':'tb3_0'}]),
         launch_ros.actions.Node(
             package='sokogredd',
             executable='markerBro',
             name='markerBro',
-            namespace='tb3_1',
-            parameters=[{'tb_id':'tb3_1'}]),
-
-
-
+            parameters=[{'namespace':'tb3_1'}])
   ])
