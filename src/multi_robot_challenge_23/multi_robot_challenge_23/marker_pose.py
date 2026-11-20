@@ -11,6 +11,10 @@ from std_msgs.msg import Int64
 
 from detection.msg import Detection
 
+from rclpy.logging import LoggingSeverity
+
+LOGGLEVEL = LoggingSeverity.INFO
+
 import tf2_geometry_msgs
 
 class MarkerMapPose(Node):
@@ -25,8 +29,8 @@ class MarkerMapPose(Node):
         self.marker_pose = Pose()
         self.marker_recieved = False 
 
-        self.marker_recognition_sub = self.create_subscription(ArucoMarkers, '/'+self.namespace+'/aruco_markers', self.clbk_marker_recognition, 10)
-        self.detection_publisher = self.create_publisher(Detection, 'detection', 10)
+        self.marker_recognition_sub = self.create_subscription(ArucoMarkers, 'aruco_markers', self.clbk_marker_recognition, 10)
+        self.detection_publisher = self.create_publisher(Detection, '/detection', 10)
         #self.marker_map_pose_pub = self.create_publisher(Pose, '/'+self.namespace+'/marker_map_pose', 10)
         #self.marker_id_pub = self.create_publisher(Int64,'/'+self.namespace+'/marker_id', 10)
 
@@ -37,8 +41,9 @@ class MarkerMapPose(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        timer_period = 0.1  # seconds
+        timer_period = 1.0  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.get_logger().set_level(LOGGLEVEL)
 
 
     def clbk_marker_recognition(self, msg):
@@ -63,6 +68,7 @@ class MarkerMapPose(Node):
         marker_map_pose = tf2_geometry_msgs.do_transform_pose(self.marker_pose, self.trans_camera_map)
 
         if self.marker_id != 1000:
+            self.get_logger().info('publishing new detection')
             # self.marker_map_pose_pub.publish(marker_map_pose)
             # marker_id_msg.data = self.marker_id
             # self.marker_id_pub.publish(marker_id_msg)

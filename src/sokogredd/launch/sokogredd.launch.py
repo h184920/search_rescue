@@ -19,7 +19,8 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='scoring',
             executable='scoring',
-            name='scoring'),
+            name='scoring'
+            ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(
                 get_package_share_directory(
@@ -28,30 +29,38 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='sokogredd',
             executable='coordinator',
-            name='coordinator'),
+            name='coordinator'
+            ),
         launch_ros.actions.Node(
             package='sokogredd',
             executable='detection',
-            namespace='detection'),
+            #namespace='detection'
+            ),
         namespace_launch_arg,
         launch_ros.actions.Node(
             package='sokogredd',
             executable='actionHandler',
+            namespace='tb3_0',
             parameters=[{'namespace':'tb3_0'}]
         ), 
         launch_ros.actions.Node(
             package='sokogredd',
             executable='actionHandler',
+            namespace='tb3_1',
             parameters=[{'namespace':'tb3_1'}]
                 ),
         launch_ros.actions.Node(
             package='sokogredd',
             executable='markerBro',
             name='markerBro',
-            parameters=[{'namespace':'tb3_0'}]),
+            namespace='tb3_0',
+            parameters=[{'namespace':'tb3_0'}],
+            ),
         launch_ros.actions.Node(
             package='sokogredd',
             executable='markerBro',
             name='markerBro',
-            parameters=[{'namespace':'tb3_1'}])
+            namespace='tb3_1',
+            parameters=[{'namespace':'tb3_1'}]
+            ),
   ])

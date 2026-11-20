@@ -3,11 +3,15 @@ from rclpy.node import Node
 import math
 import time
 
+from rclpy.logging import LoggingSeverity
+
 from tf_transformations import euler_from_quaternion
 from gazebo_msgs.srv import GetEntityState
 from nav_msgs.msg import Odometry
 from scoring_interfaces.srv import SetMarkerPosition
 from geometry_msgs.msg import Point
+
+LOGGLEVEL = LoggingSeverity.ERROR
 
 class ScoringClass(Node):
 
@@ -23,6 +27,7 @@ class ScoringClass(Node):
         self.marker_score = 0
         self.start_time_score = 600
         self.robot_count = 2
+        self.get_logger().set_level(LOGGLEVEL)
 
         self.create_subscription(Odometry, '/tb3_0/odom', self.clbk_tb3_0_odom, 10)
         self.create_subscription(Odometry, '/tb3_1/odom', self.clbk_tb3_1_odom, 10)

@@ -26,9 +26,11 @@ setup(
     entry_points={
         'console_scripts': [
             'wallfollower_controller = bug2_navigation.wallfollower3_controller:main',
-            'go_to_point = bug2_navigation.go_to_point:main',
-            'bug2_controller = bug2_navigation.bug2_controller:main',
+            'go_to_point = bug2_navigation.go3point_controller:main',
+            'bug2_controller = bug2_navigation.bug3_controller:main',
             'test_action_server = bug2_navigation.test_action_server:main',
+            'dead = bug2_navigation.deadlockServer:main',
+            'lock = bug2_navigation.deadlockClient:main',
         ],
     },
 )

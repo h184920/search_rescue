@@ -26,6 +26,7 @@ def generate_launch_description():
             package='multi_robot_challenge_23',
             executable='marker_recognition',
             name='marker_recognition',
+            namespace=namespace,
             parameters=[{"namespace": namespace}],
     )
 

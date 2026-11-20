@@ -1,26 +1,25 @@
 import rclpy
+import bug2_navigation.global_utils as gu
+import math as m
 from rclpy.node import Node
-
+from rclpy.logging import LoggingSeverity
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
-
 from bug2_navigation.global_utils import logg
-
+from interfjeses.msg import JustBool
 from std_srvs.srv import SetBool
-
-import math as m
 
 TEST = False
 
 scale = 1.0
 
-momentum = 0.8
+momentum = 0.9
 L1 = scale*momentum * 1.24
 L2 = scale*momentum * 1.53
 L3 = scale*momentum * 1.8
 L4 = scale*momentum * 1.8
 
-sharpness = 1.0
+sharpness = 1.05
 STRAIGHT_SCALAR = scale*sharpness * 0.75
 INNER_SWING_LIN = scale*sharpness * 0.45
 INNER_SWING_ANG = scale*sharpness * 0.75
@@ -28,7 +27,7 @@ OUTER_SWING_LIN = scale*sharpness * 0.35
 OUTER_SWING_ANG = scale*sharpness * (-1) * 0.95
 
 MARGIN = 0.6
-ANGLE_SMALL = 30
+ANGLE_SMALL = 25
 ANGLE_LARGE = 30
 
 ang1, ang2, ang3, ang4 = 345, 295, 270, 245
@@ -37,21 +36,29 @@ class WallfollowerController(Node):
 
     def __init__(self, active=False):
         super().__init__("wallfollower")
-        self.sub = self.create_subscription(LaserScan, "scan", self.laser_callback, 10)
-        self.pub = self.create_publisher(Twist, "cmd_vel", 10)
+        self.declare_parameter('namespace')
+        self.namespace = self.get_parameter('namespace').get_parameter_value().string_value
         self.active = active
+        self.sub = self.create_subscription(LaserScan, 'scan', self.laser_callback, 10)
+        self.pub = self.create_publisher(Twist, 'cmd_vel', 10)
         self.timer = self.create_timer(0.3, self.publish_twist)
-        self.server = self.create_service(SetBool, "wall_follower_bryter", self.respond_to_switch)
+        self.server = self.create_service(SetBool, 'wall_follower_bryter', self.respond_to_switch)
+        self.create_subscription(JustBool, 'at_once', self.receiveBreak, 10)
         self.L0 = self.L1 = self.L2 = self.L3 = self.L4 = 3.5
         self.ang1, self.ang2, self.ang3, self.ang4 = ang1, ang2, ang3, ang4
         self.rightwall = 1
         self.has_known_wall = False
-        self.create_timer(2.0, self.countLogg)
-        self.loggCount = 0
-        self.logg("initialized wallfollower_controller")
+        self.loggMod = 50
+        self.loggCount = self.loggMod
+        self.force_logg("initialized wallfollower_controller\n".upper()*5)
+        self.get_logger().set_level(LoggingSeverity.FATAL)
 
-    def countLogg(self):
-        self.loggCount += 1
+    def receiveBreak(self, _):
+        t = Twist()
+        t.linear.x = 0.0
+        t.angular.z = 0.5
+        self.pub.publish(t)
+        self.active = False
 
     def laser_callback(self, msg):
         self.L0 = msg.ranges[(360 - self.ang1)]
@@ -61,7 +68,7 @@ class WallfollowerController(Node):
         self.L4 = msg.ranges[self.ang4]
 
     def respond_to_switch(self, request, response):
-        self.logg("wallfollower: recevied request " + str(request.data))
+        self.force_logg("wallfollower: recevied request " + str(request.data))
         for i in range(3):
             twist = Twist()
             twist.linear.x = twist.angular.z = 0.0
@@ -142,10 +149,17 @@ class WallfollowerController(Node):
         twist.angular.z = self.rightwall*ang  
 
     def logg(self, *args):
-        if self.loggCount != 5:
+        self.loggCount += 1
+        if not self.loggCount%self.loggMod == 0:
             return
         self.loggCount = 0
-        self.get_logger().info(logg('some wallfollower', *args))
+        self.get_logger().info(gu.logg(self.namespace+'/wallfollower', *args))
+
+    def force_logg(self, obj):
+        count = self.loggCount
+        self.loggCount = self.loggMod - 1
+        self.logg(obj)
+        self.loggCount = count
           
 def flip_index(ang):
     return (360 - ang) % 360

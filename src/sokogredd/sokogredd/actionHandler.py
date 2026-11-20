@@ -1,8 +1,10 @@
 
 import rclpy
 import time
-from sokogredd import utils as u
 import random
+import math
+import rclpy.action.client as act
+from sokogredd import utils as u
 from uuid import UUID
 from rclpy.node import Node
 from rclpy.action.client import ActionClient
@@ -14,8 +16,11 @@ from bug2_interfaces.action import Bug2
 from interfjeses.msg import JustBool
 from interfjeses.srv import GoalPose
 from interfjeses.action import Teamup
-from unique_identifier_msgs.msg import UUID
+from rclpy.logging import LoggingSeverity
 
+FIRE_DISTANCE_THRESHHOLD = 1.0
+
+LOGGLEVEL = LoggingSeverity.INFO
 
 class ActionHandler(Node):
 
@@ -23,188 +28,183 @@ class ActionHandler(Node):
         super().__init__('action_handler')
         self.declare_parameter('namespace')
         self.namespace = self.get_parameter('namespace').get_parameter_value().string_value
-        self.__markerStack = list()
-        self.__firePose, self.__fireSent = None, False
-        self.__currentGoalHandle, self.__validGoalID = None, -1
-        self.__latestPosition = Point(x=0.0, y=0.0, z=0.0)
-        self.create_subscription(JustBool, 'run_flag', self.__flagCB, 10)
-        self.create_subscription(Detection, self.namespace+'/new_detection', self.__detectionCB, 10)
-        self.__goalClient = self.create_client(GoalPose, 'goal_assignment')
-        self.__teamupClient = ActionClient(self, Teamup, self.namespace+'/teamup')
-        self.__bug2Client = ActionClient(self, Bug2, self.namespace+'/bug2')
-        self.__waitForServer(self.__goalClient.wait_for_service, 'goal_assignment')
-        self.__waitForServer(self.__teamupClient.wait_for_server, 'teamup')
-        self.__waitForServer(self.__bug2Client.wait_for_server, 'bug2')
-        self.__logg('Initialized')
+        self.unacceptedMarkers = list()
+        self.greenFlag = False
+        self.firePose, self.fireSent = None, False
+        self.currentGoal, self.requestCount = None, 0
+        self.latestPosition = Point(x=0.0, y=0.0, z=0.0)
+        self.create_subscription(JustBool, '/run_flag', self.flagCallback, 10)
+        self.create_subscription(Detection, 'new_detection', self.detectionCallback, 10)
+        self.randomTargetSrv = self.create_client(GoalPose, 'goal_assignment')
+        self.teamupActCli = ActionClient(self, Teamup, 'teamup')
+        self.bug2Action = ActionClient(self, Bug2, 'bug2')
+        self.waitForServer(self.randomTargetSrv.wait_for_service, 'goal_assignment')
+        self.waitForServer(self.teamupActCli.wait_for_server, 'teamup')
+        self.waitForServer(self.bug2Action.wait_for_server, 'bug2')
+        self.logg('Initialized\n'.upper()*5)
+        self.get_logger().set_level(LOGGLEVEL)
 
-    def __waitForServer(self, callable, name):
-        while not callable(timeout_sec=0.5):
-            self.__logg('waiting for %s'%(name))
-        self.__logg('%s is ready'%(name))
-
-    def __flagCB(self, fMsg):
-        if fMsg.green:
-            #self.__logg('received start signal.. starting')
-            self.__startRunning()
+    def updateGoal(self, targetPose=None, skipStack=False):
+        if self.currentGoal is not None:
+            self.cancelGoal()
             return
-        #self.__logg('recevied stop signal.. stopping')
-        self.__stopRunning()
+        if not self.greenFlag:
+            return
+        logg = 'about to send new goal-request'
+        if self.firePose is not None:
+            logg += ' with marker4 event ongoing'
+            if self.fireSent:
+                self.logg(logg + '\n returning, since a request has already been sent')
+                return
+            self.logg(logg + '\n sending request to bug2 for changing course')
+            self.fireSent = True
+            goal = self.firePose.position
+        elif len(self.unacceptedMarkers) > 0 and not skipStack:
+            logg += '\n has unaccepted markers pending, handling that'
+            goal = self.unacceptedMarkers[-1].pose.position
+        elif targetPose is not None:
+            logg += '\n going for the random target'
+            goal = targetPose.position
+        else:
+            self.randomTargetSrv.call_async(
+                GoalPose.Request(tb_id=self.namespace)).add_done_callback(
+                    self.randomTargetCallback)
+            self.logg(logg + '\n will first request a random destination')
+            return
+        self.logg(logg)
+        self.requestCount += 1
+        self.bug2Action.send_goal_async(
+            Bug2.Goal(target_position=goal), self.bug2FeedbackCallback).add_done_callback(self.bug2ResponseCallback)
 
-    def __detectionCB(self, dMsg):
+    def cancelGoalCallback(self, _):
+        # bug2 should always cancel the goal
+        self.updateGoal()
+
+    def cancelGoal(self, goalHandle=None):
+        if goalHandle is None:
+            goalHandle = self.currentGoal
+            self.currentGoal = None
+        goalHandle.cancel_goal_async().add_done_callback(self.cancelGoalCallback)
+
+    def bug2ResponseCallback(self, fGoalHandle):
+        s = 'received response from coordinator'
+        outdated = self.requestCount > 1
+        assert self.requestCount > 0
+        self.requestCount -= 1
+        goalHandle = fGoalHandle.result()
+        if not goalHandle.accepted:
+            s+='goal state was not accepted'
+            if not outdated:
+                self.logg(s + ',\n but it was the most recent sent. Sending new goal')
+                self.updateGoal()
+                return
+            self.logg(s)
+            return
+        if outdated or not self.greenFlag:
+            self.logg('\n   goal was outdated.. or self does not have green flag. Canceling')
+            self.cancelGoal(goalHandle)
+            return
+        self.logg(s+ ',\n   proceeding to wait for result')
+        self.currentGoal = goalHandle
+        goalHandle.get_result_async().add_done_callback(self.bug2ResultCB)
+        
+
+    def randomTargetCallback(self, futureTargetPose):
+        response = futureTargetPose.result()
+        self.logg('received response: {}'.format(response))
+        self.updateGoal(targetPose=response.goal_pose)
+
+    def bug2ResultCB(self, futureResult):
+        logg = ' reached result callback for goal'
+        _ = futureResult.result()
+        if _.status in (act.GoalStatus.STATUS_CANCELED, act.GoalStatus.STATUS_CANCELING):
+            self.logg(logg + '\n goal in status canceling or canceled, trusting other callback to restart')
+            return
+        stackSize = len(self.unacceptedMarkers)
+        target=None
+        if self.fireSent:
+            logg += '. Arrived by aruco-marker 4'
+            p = _.result.base_position
+            p0 = self.firePose.position
+            if math.sqrt((p0.x - p.x)**2 + (p0.y - p.y)**2) < FIRE_DISTANCE_THRESHHOLD:
+                self.logg('sending request for teamup with other robot')
+                self.teamupActCli.send_goal_async(
+                    Teamup.Goal(), self.teamFeedbackCallback).add_done_callback(
+                        self.teamupResponseCallback)
+                return
+            self.logg('not close enough to marker, resending request')
+            target = self.firePose
+        elif stackSize > 1:
+            logg += 'goal should be previously undetected marker. Moving it to stack bottom.'
+            self.unacceptedMarkers.insert(0, self.unacceptedMarkers.pop())
+        self.logg(logg)
+        self.updateGoal(targetPose=target, skipStack=stackSize==1)
+
+    def detectionCallback(self, dMsg):
         logg = 'received detection message'
         if not dMsg.accepted:
-            #logg += ' as unaccepted by server'
-            self.__markerStack.append(dMsg)
-        elif dMsg.marker_id == 4:
-            logg += ' marker with ID=4 !!'
-            self.__firePose = dMsg.pose
-            self.__fireSent = False
+            logg += ' as unaccepted by server'
+            self.unacceptedMarkers.append(dMsg)
         else: 
             logg += ' accepted by server'
-            for i in range(len(self.__markerStack)):
-                if self.__markerStack[i].marker_id == dMsg.marker_id:
-                    self.__markerStack.pop(i)
-                    #logg += '\n  removed it from stack'
-                else: pass
-                    #logg += '\n  not to be found in stack'
-            self.__logg(logg)
-            return
-        self.__logg(logg)
-        self.__sendGoal()
+            for i in range(len(self.unacceptedMarkers)):
+                if self.unacceptedMarkers[i].marker_id == dMsg.marker_id:
+                    self.unacceptedMarkers.pop(i)
+                    logg += '\n removed it from stack'
+            self.logg(logg)
+            if dMsg.marker_id == 4:
+                logg += ' marker was marker 4'
+                self.firePose = dMsg.pose
+                self.fireSent = False
+        self.logg(logg)
+        self.updateGoal()
 
-    def __randomGoalCB(self, futurePose):
-        #self.__logg('response from coordinator received')
-        self.__sendGoal(randomPose=futurePose.result().goal_pose)
-
-    def __bug2ResultCB(self, future):
-        logg = ' reached result callback for goal'
-        target = future.result().result
-        if target.was_canceled:
-            self.__logg(logg+', but the goal had been canceled')
-            return
-        if self.__fireSent:
-            self.__logg(logg + '. Supposed to be a big fire.. sending teamup action request')
-            futureTeamupHandle = self.__teamupClient.send_goal_async(
-                Teamup.Goal(), self.__teamFeedbackCB
-                )
-            futureTeamupHandle.add_done_callback(self.__teamupResponseCB)
-            return 
-        if len(self.__markerStack) > 0:
-            logg += ' reached previously undetected marker. Popping from stack. Hopefully accepted by server'
-            self.__markerStack.pop()
-        self.__logg(logg)
-        self.__sendGoal()
-
-    def __teamupResultCB(self, void):
-        self.__logg('fire event over. Coordinator said so')
-        self.__firePose = None
-        self.__fireSent = False
-        self.__sendGoal()
-
-    def __defineBug2ResponseCB(self, goalHandleID):
-        def responseCB(futureResponse):
-            logg = 'response arrived form goal request for goal(id=%s)'%goalHandleID
-            goalHandle = futureResponse.result()
-            if not self.__receiveHandle(goalHandle, goalHandleID):
-                self.__logg(logg + 'was no longer valid. Aborting')
-                return
-            self.__logg(logg + 'was still valid. Proceeding')
-            futureResult = goalHandle.get_result_async()
-            futureResult.add_done_callback(self.__bug2ResultCB)
-        return responseCB
-
-    def __teamupResponseCB(self, futureTeamup):
+    def teamupResponseCallback(self, futureTeamup):
         logg = 'received teamup response from coordinator'
         teamupHandle = futureTeamup.result()
         if not teamupHandle.accepted:
-            self.__logg(logg + 'wierdly not accepted\n ..aborting then')
-            self.__firePose = None
-            self.__fireSent = False
-            self.__sendGoal()
-        self.__logg(logg + '\n  proceeding')
-        futureVoid = self.__teamupClient.get_result_async()
-        futureVoid.add_done_callback(self.__teamupResultCB)
+            self.logg(logg + '.\n   Request for teamup was unaccepted by coordinator\n'.upper()*3)
+            self.firePose = None
+            self.fireSent = False
+            self.updateGoal()
+        self.logg(logg + '\n  teamed up')
+        futureVoid = self.teamupActCli.get_result_async()
+        futureVoid.add_done_callback(self.teamupResultCallback)
 
-    def __bug2FeedbackCB(self, msg):
-        self.__latestPosition = msg.feedback.current_position
-
-    def __teamFeedbackCB(self, msg):
+    def teamFeedbackCallback(self, msg):
         return
 
-    def __cancelCB(self, future):
-        cancelResponse = future.result()
-        if cancelResponse == CancelResponse.REJECT:
-            raise Exception('request to cancel rejected')
+    def teamupResultCallback(self, futureVoid):
+        s = 'teamup result arrived'
+        _ = futureVoid.result()
+        if _.status == act.GoalStatus.STATUS_SUCCEEDED:
+            s += '\nmarker 4 successfully handled'
+            self.firePose = None
+            self.fireSent = False
+        elif not _.status == act.GoalStatus.STATUS_SUCCEEDED:
+            s = '\nunsuccessful. Trying again'
+        self.logg(s)
+        self.updateGoal()
 
-    def __sendGoal(self, randomPose=None):
-        if not self.__isRunning():
+    def bug2FeedbackCallback(self, msg):
+        if msg.feedback.current_position is None:
             return
-        logg = 'about to send new goal-request'
-        if self.__firePose is not None:
-            logg += ' with marker4 event ongoing'
-            if self.__fireSent:
-                self.__logg(logg + '\n returning, since a request has already been sent')
-                return
-            self.__logg(logg + '\n sending request to bug2 for changing course')
-            self.__fireSent = True
-            goal = self.__firePose.position
-        elif len(self.__markerStack) > 0:
-            logg += '\n has unaccepted markers pending, handling that'
-            goal = self.__markerStack[-1].pose.position
-        elif randomPose is not None:
-            logg += '\n next stop, the random goal previously generated'
-            goal = randomPose.position
-        else:
-            futureResult = self.__goalClient.call_async(
-                GoalPose.Request(tb_id=self.namespace)
-                )
-            futureResult.add_done_callback(self.__randomGoalCB)
-            self.__logg(logg + '\n will first request a random destination')
+        self.latestPosition = msg.feedback.current_position
+
+    def flagCallback(self, fMsg):
+        if fMsg.green and self.greenFlag or not (fMsg.green or self.greenFlag):
             return
-        self.__logg(logg)
-        id = self.__validGoalID + 1
-        self.__setGoalTo(id=id)
-        futureGoalHandle = self.__bug2Client.send_goal_async(
-            Bug2.Goal(target_position=goal),
-            self.__bug2FeedbackCB)
-        futureGoalHandle.add_done_callback(self.__defineBug2ResponseCB(id))
+        self.greenFlag = fMsg.green
+        self.updateGoal()
 
-    def __receiveHandle(self, goalHandle, id):
-        if not goalHandle.accepted:
-            return False
-        if not id == self.__validGoalID:
-            self.__cancelGoal(goalHandle)
-            return False
-        self.__currentGoalHandle = goalHandle
-        self.__validGoalID = 0
-        return True
+    def waitForServer(self, callable, name):
+        while not callable(timeout_sec=0.5):
+            self.logg('waiting for %s'%(name))
+        self.logg('%s is ready'%(name))
 
-    def __setGoalTo(self, id=0):
-        if self.__currentGoalHandle is not None:
-            self.__cancelGoal(self.__currentGoalHandle)
-            self.__currentGoalHandle = None
-        self.__validGoalID = id
-
-    def __cancelGoal(self, goalHandle):
-        future = goalHandle.cancel_goal_async()
-        future.add_done_callback(self.__cancelCB)
-
-    def __startRunning(self):
-        self.__logg('starting execution')
-        self.__validGoalID = 0
-        self.__sendGoal()
-
-    def __stopRunning(self):
-        self.__logg('stopping execution')
-        self.__setGoalTo(id=-1)
-
-    def __isRunning(self):
-        return self.__validGoalID > -1
-
-    def __logg(self, obj):
+    def logg(self, obj):
         self.get_logger().info(u.logg(
-            self.namespace+'.action_handler', str(obj).upper())
-            )
+            self.namespace+'.action_handler', str(obj).upper()))
 
     # Single callback group. Not needed.
 

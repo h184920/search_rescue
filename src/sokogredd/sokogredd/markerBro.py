@@ -5,6 +5,10 @@ from nav_msgs.msg import Odometry
 from ros2_aruco_interfaces.msg import ArucoMarkers
 from detection.msg import Detection
 
+from rclpy.logging import LoggingSeverity
+
+LOGGLEVEL = LoggingSeverity.FATAL
+
 class markerBro(Node):
     def __init__(self):
         super().__init__('markerBro')
@@ -17,6 +21,8 @@ class markerBro(Node):
         self.create_subscription(Odometry, "odom", self.odom_callback, 10)
         self.create_subscription(ArucoMarkers, "aruco_markers", self.aruco_callback, 10)
         self.pub = self.create_publisher(Detection, "/detection", 10)
+        self.get_logger().info('initialized\n'.upper()*5)
+        self.get_logger().set_level(LOGGLEVEL)
 
     def odom_callback(self, msg):
         p = msg.pose.pose.position
@@ -26,6 +32,7 @@ class markerBro(Node):
         self.turn = abs(msg.twist.twist.angular.z)
 
     def aruco_callback(self, msg):
+
         if self.yaw is None:
             return
         for markerId, pose in zip(msg.marker_ids, msg.poses):

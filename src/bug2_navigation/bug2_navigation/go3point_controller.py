@@ -1,43 +1,54 @@
 import rclpy
+import bug2_navigation.global_utils as gu
 from rclpy.node import Node
-
-from math import sin, cos, pi, sqrt, acos
-
+from rclpy.logging import LoggingSeverity
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 from bug2_interfaces.srv import GoToPoint
 from bug2_navigation.global_utils import logg
-
+from interfjeses.msg import JustBool
 from tf_transformations import euler_from_quaternion
-
-from bug2_navigation.global_utils import extract_odom_position, extract_odom_orientation, compute_distance_and_offset
+from math import sin, cos, pi, sqrt, acos
 
 TEST = False
 
-LANDING_RANGE = 0.7
-TARGET_FRACTION = 0.35
+LANDING_RANGE = 1.5
+TARGET_FRACTION = 0.5
 TARGET = (0.0, 0.0)
 
-LINEAR = 0.7
+LINEAR = 0.8
 
 
 class gotopoint_controller(Node):
 
     def __init__(self, target=TARGET, init_active=False):
         super().__init__("gotopoint")
-        self.sub = self.create_subscription(Odometry, "odom", self.odom_callback, 10)
-        self.pub = self.create_publisher(Twist, "cmd_vel", 10)
+        self.declare_parameter('namespace')
+        self.namespace = self.get_parameter('namespace').get_parameter_value().string_value
+        self.sub = self.create_subscription(Odometry, 'odom', self.odom_callback, 10)
+        self.pub = self.create_publisher(Twist, 'cmd_vel', 10)
         self.active = init_active
         self.received_initial_message = False
         self.timer = self.create_timer(0.1, self.publish_twist)
-        self.server = self.create_service(GoToPoint, "go_to_point_bryter", self.respond_to_switch)
+        self.server = self.create_service(GoToPoint, 'go_to_point_bryter', self.respond_to_switch)
+        self.create_subscription(JustBool, 'at_once', self.receiveBreak, 10)
         self.x = self.y = self.orientation = self.dist = self.off = 0.0
         self.tX, self.tY = target
-        self.logg(f"initialized gotopoint_controller with target as {self.tX, self.tY}")
+        self.loggMod = 50
+        self.loggCount = self.loggMod
+        self.force_logg(f"initialized gotopoint_controller with target as {self.tX, self.tY}\n".upper()*5)
+        self.get_logger().set_level(LoggingSeverity.FATAL)
+
+    def receiveBreak(self, _):
+        t = Twist()
+        t.linear.x = 0.0
+        t.angular.z = 0.5
+        self.pub.publish(t)
+        self.active = False
 
     def odom_callback(self, msg):
-        self.x, self.y = extract_odom_position(msg)
-        self.orientation = extract_odom_orientation(msg)
+        self.x, self.y = gu.extract_odom_position(msg)
+        self.orientation = gu.extract_odom_orientation(msg)
         self.compute_distance_and_offset()
         self.received_initial_message = True
 
@@ -60,24 +71,23 @@ class gotopoint_controller(Node):
             twist.linear.x = cos(angular) * LINEAR
             twist.angular.z = sin(angular) * LINEAR
         if self.dist < LANDING_RANGE: 
-            self.logg(".. close")
             scale = self.dist/LANDING_RANGE
             twist.linear.x *= scale
             twist.angular.z *= scale
-        self.self.logg_state(twist)
+        self.logg_state(twist)
         self.pub.publish(twist)
 
     def respond_to_switch(self, request, response):
-        self.logg("gotopoint: received request: " + str(request.move_switch))
+        self.force_logg("gotopoint: received request: " + str(request.move_switch))
         for i in range(3):
             twist = Twist()
             twist.linear.x = twist.angular.z = 0.0
             self.pub.publish(twist)
         self.set_target(request.target_position.x, request.target_position.y)
-        if self.hasArrived():
-            self.active = True
-        else:
-            self.active = request.move_switch
+        should_finish = self.hasArrived()
+        if not should_finish:
+            should_finish = request.move_switch
+        self.active = should_finish
         response.success = (
             not (request.move_switch or self.active)
             or (request.move_switch and self.active))
@@ -93,7 +103,7 @@ class gotopoint_controller(Node):
         return self.dist < TARGET_FRACTION*LANDING_RANGE
 
     def compute_distance_and_offset(self):
-        self.dist, self.off = compute_distance_and_offset(self.x, self.y, self.orientation, self.tX, self.tY)
+        self.dist, self.off = gu.compute_distance_and_offset(self.x, self.y, self.orientation, self.tX, self.tY)
 
     def enable(self):
         self.is_active = True
@@ -115,7 +125,17 @@ class gotopoint_controller(Node):
             f" lin = {round(tvist.linear.x, 2)}, ang = {round(tvist.angular.z, 2)}\n")
 
     def logg(self, obj):
-        self.get_logger().info(logg('a gotopoint instance', obj))
+        self.loggCount += 1
+        if not self.loggCount%self.loggMod == 0:
+            return
+        self.loggCount = 0
+        self.get_logger().info(logg(self.namespace+'/gotopoint', obj))
+
+    def force_logg(self, obj):
+        count = self.loggCount
+        self.loggCount = self.loggMod -1
+        self.logg(obj)
+        self.loggCount = count
 
 # gotopoint_controller end ..
 

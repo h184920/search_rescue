@@ -34,3 +34,6 @@ def logg(loggerName, *args):
         args = args[0]
     s = '%s:\n%s\n'%(loggerName, str(args))
     return s.replace('\n', '\n'+' '*10)
+
+def prefix(inst, name):
+    return '/'+inst.namespace+'/'+name

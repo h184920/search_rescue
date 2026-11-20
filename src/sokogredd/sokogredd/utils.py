@@ -22,9 +22,21 @@ def findHBorders(occGrid):
     return __findOccupancyGridBorders(occGrid, lambda w, h: (w, h))
 
 
-def logg(loggerName, obj):
-    s = '%s:\n%s\n'%(loggerName, str(obj))
-    return s.replace('\n', '\n'+' '*10).upper()
+def logg(loggerName, *args):
+    if len(args) == 1:
+        args = args[0]
+    s = '%s:\n%s\n'%(loggerName, str(args))
+    return s.replace('\n', '\n'+' '*10)
+
+def convertNamespaceID(tb_id, typeof):
+    if isinstance(tb_id, typeof):
+        return tb_id
+    if typeof is int:
+        return int(tb_id.strip()[-1])
+    return 'tb3_'+str(tb_id)
+
+def pl(matrix, a='*', b='#'):
+    return '\n'.join([' '.join([b if item==1 else a for item in row]) for row in matrix])
  
 
 # non-public 
@@ -76,8 +88,7 @@ def __mapToRealY(occGrid, h):
 
 if __name__ == '__main__':
     import random
-    def pl(matrix, a='*', b='#'):
-        print('\n'.join([' '.join([b if item==1 else a for item in row]) for row in matrix]))
+
     m, n = 40, 45
     matrix = [[(1 if (0<j<3 or n-4<j<n-1) and 0<i<m-1 else 0) for j in range(n)] for i in range(m)]
     ones = [0, *[1 for i in range(n-2)], 0]
