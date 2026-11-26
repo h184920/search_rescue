@@ -25,9 +25,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "coordinator = sokogredd.newCoordinator:main",
+            "coordinator = sokogredd.coordinator:main",
             "actionHandler = sokogredd.actionHandler:main",
-            "detection = sokogredd.newDetectionFilter:main",
+            "detection = sokogredd.detectionFilter:main",
             "markerBro = sokogredd.markerBro:main",
         ],
     },

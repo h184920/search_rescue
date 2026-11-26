@@ -1,292 +1,157 @@
 import rclpy
 import time
-from sokogredd import utils as u
+import sokogredd.utils as u
 import random
+import threading
 from rclpy.node import Node
-from rclpy.action import ActionClient
-from geometry_msgs.msg import Point
+from rclpy.action import ActionServer
+from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
+from geometry_msgs.msg import Pose, Point
 from detection.msg import Detection
-from bug2_interfaces.action import Bug2
 from nav_msgs.msg import OccupancyGrid
-from rclpy.qos import QoSDurabilityPolicy, QoSProfile, ReliabilityPolicy
+from rclpy.qos import QoSDurabilityPolicy, QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
+from interfjeses.msg import JustBool
+from interfjeses.srv import GoalPose
+from interfjeses.action import Teamup
 
 DISTANCE_THRESHOLD = 1.5
+
+TBIDS = ['tb3_0', 'tb3_1']
+
+EDGETUPLE = (-10, 10)
 
 class Coordinator(Node):
 
     def __init__(self):
         super().__init__('coordinator')
-        self.__name = 'coordinator'
-        self.__canRun = True
-        self.__mapDigested = False
-        self.__fireDuo = None
-        plis_funger = QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL, reliability=ReliabilityPolicy.RELIABLE)
-        self.create_subscription(OccupancyGrid, 'map', self.__receiveMapCallback, plis_funger)
-        self.create_subscription(Detection, '/true_detection', self.__detectionCallback, 10)
-        self.__clientTable = [ClientHandler(self, i, Bug2, f'/tb3_{i}/bug2') for i in range(2)]
-        self.logg('INITIALIZED')
+        self.name = 'coordinator'
+        self.occGrid = None
+        self.wBorders, self.hBorders = list(), list()
+        self.wmin, self.wmax, self.hmin, self.hmax, self.dw, self.dh = 0, 0, 0, 0, 0, 0
+        self.waitingActors, self.releasedWaiters = 0, 0
+        self.markers = dict()
+        self.startTime = time.time()
+        self.aruco4OK = False
+        self.defaultPoint = Point()
+        self.teamuplock = threading.Lock()
+        qos_profile = QoSProfile(reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_RELIABLE,
+                        history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+                        durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
+                        depth=5)
+        self.create_timer(60*10.0, self.timesup)
+        self.create_subscription(OccupancyGrid, '/map', self.receiveMapCallback, qos_profile)
+        self.create_subscription(Detection, '/true_detection', self.detectionCallback, 10)
+        self.flagPublisher = self.create_publisher(JustBool, '/run_flag', 10)
+        self.pubTable = {namespace: self.create_publisher(Detection, '/'+namespace+'/new_detection', 10) for namespace in TBIDS}
+        self.reEntrant = ReentrantCallbackGroup()
+        self.goalAssigner = self.create_service(GoalPose, '/goal_assignment', self.assignGoalCBStratB, callback_group=self.reEntrant)
+        self.teamupAction = ActionServer(self, Teamup, '/teamup', self.teamupActionCallback, callback_group=self.reEntrant)
+        self.logg('Initialized\n'.upper()*5)
 
-    def logg(self, obj):
-        self.get_logger().info(u.logg(self.__name, obj))
-
-    def spin(self):
-        self.__awaitMap()
-        self.logg('MAP HAS BEEN PARSED. STARTING')
-        while not self.__isDead():
-            rclpy.spin_once(self, timeout_sec=0.1)
-            if not (self.__fireDuo is None 
-                    or self.__fireDuo[0].isReady() 
-                    or self.__fireDuo[1].isReady()):
-                self.logg('big fire determined complete')
-                a, b = self.__fireDuo
-                a.markFireComplete()
-                b.markFireComplete()
-                self.__fireDuo = None
-            for client in self.__clientTable:
-                if not client.isReady():
-                    continue
-                self.logg('client_%s was ready for new task. Starting client_'%(client.id))
-                client.startWorking()
-            time.sleep(1.0)
-        self.logg('IS DEAD')
-
-    def kill(self):
-        self.__canRun = False
-        for client in self.__clientTable:
-            client.kill()
+    def timesup(self):
+        sinceEpochDelta = time.time() - self.startTime
+        mins = round(sinceEpochDelta//60)
+        secs = round(sinceEpochDelta%60)
+        mstr = '%s:%s'%(mins, secs)
+        self.logg('TIMES UP AT %s\n%s'%(mstr, str(self.markers).replace(',', '\n')))
+        self.flagPublisher.publish(JustBool(green=False))
+        return
         
-    def __awaitMap(self):
-        rclpy.spin_once(self)
-        while not self.__mapDigested:
-            time.sleep(1.0)
-            self.logg('..awaiting map')
-            rclpy.spin_once(self)
 
-    def __isDead(self):
-        return not self.__canRun
+    def receiveMapCallback(self, ogMsg):
+        self.logg('recevied map')
+        self.occGrid = ogMsg
+        self.wBorders = u.findWBorders(ogMsg)
+        self.hBorders = u.findHBorders(ogMsg)
+        self.wmin, self.wmax = u.findMinMax(self.hBorders) # yes, they are switched
+        self.hmin, self.hmax = u.findMinMax(self.wBorders) # yes, they are switched
+        self.logg
+        assert self.wmin < self.wmax
+        assert self.hmin < self.hmax
+        self.dw = self.wmax - self.wmin
+        self.dh = self.hmax - self.hmin
+        self.flagPublisher.publish(JustBool(green=True))
+        self.logg('published flag')
 
-    def __receiveMapCallback(self, ogMsg):
-        if self.__mapDigested:
-            return
-        if len(self.__clientTable) > 2: 
-            raise Exception('that would need an update')
-        wBorders = u.findWBorders(ogMsg)
-        hBorders = u.findHBorders(ogMsg)
-        self.logg('map digested with len(wBorders), len(hBorders) = %s, %s'%(len(wBorders), len(hBorders)))
-        for id in range(len(self.__clientTable)):
-            self.__clientTable[id].setGoalGenerator(
-                self.__defineGoalGenerator(id, ogMsg, wBorders, hBorders)
-            )
-        self.__mapDigested = True
-
-    def __defineGoalGenerator(self, i, ogMsg, wBorders, hBorders):
-        def generator():
-            h = random.randint(0, len(wBorders) - 1)
-            wmin, wmax = wBorders[h]
-            delta = (wmax - wmin)//len(self.__clientTable)
-            w = random.randint(wmin + i*delta, wmin + (i+1)*delta)
-            hmin, hmax = hBorders[w] 
-            if not (hmin < h < hmax):
-                h = random.choice((hmin, hmax))
-            punkt = u.mapToRealPoint(ogMsg, w, h)
-            self.logg(punkt)
-            self.logg(wBorders)
-            self.logg(hBorders)
-            return punkt
-        return generator
-
-    def __detectionCallback(self, dMsg):
-        s = 'received new detection for marker with id %s. Detected by bot_%s at %s'%(
-            dMsg.marker_id, dMsg.tb_id, dMsg.pose.position
-            )
-        client = self.__clientTable[dMsg.tb_id]
+    def detectionCallback(self, dMsg):
+        self.logg('marker detection received: %s'%(dMsg))
+        self.pubTable[dMsg.tb_id].publish(dMsg)
         if not dMsg.accepted:
-            self.logg(s+'\n ! detection not accepted by server')
-            client.noteUnaccepted(dMsg.marker_id, dMsg.pose)
             return
-        if dMsg.marker_id != 4:
-            self.logg(s+'.. accepted by server')
-            client.noteAccepted(dMsg.marker_id)
+        sinceEpochDelta = time.time() - self.startTime
+        mins = round(sinceEpochDelta//60)
+        secs = round(sinceEpochDelta%60)
+        mstr = '%s:%s'%(mins, secs)
+        self.markers[dMsg.marker_id] = mstr
+        self.logg('\n%s: [%s]\n'%(dMsg.marker_id, mstr))
+        if self.testDone():
             return
-        self.logg(s+'\n markerID=4')
-        assistant = self.__findAssistant(client, dMsg.pose.position)
-        client.assignBigFire(dMsg.pose)
-        assistant.assignBigFire(dMsg.pose)
-        self.__fireDuo = (client, assistant)
-        self.logg('created duo (%s, %s)'%(client.id(), assistant.id()))
+        if dMsg.marker_id == 4:
+            assist_id = random.choice([id for id in self.pubTable.keys() if u.convertNamespaceID(id, str) != dMsg.tb_id])
+            self.pubTable[assist_id].publish(dMsg)
 
-    def __findAssistant(self, finderClient, position):
-        self.logg('finding assistance bot for %'%(finderClient.id()))
-        dist = 500.0
-        x, y = position.x, position.y
-        for candidate in self.__clientTable:
-            if candidate.id == finderClient.id:
-                continue
-            tbx, tby = candidate.latestPosition.x, candidate.latestPosition.y
-            tbDist = u.distance(x, y, tbx, tby)
-            if tbDist < dist:
-                dist = tbDist
-                theChosenOne = candidate
-        return theChosenOne 
+    def teamupActionCallback(self, goalHandle):
+        with self.teamuplock:
+            self.waitingActors += 1
+        self.logg(str(self.waitingActors) + ' guys have teamed up')
+        self.aruco4OK = self.waitingActors >= 2
+        while not self.aruco4OK:
+            time.sleep(0.5)
+        self.testDone()
+        goalHandle.succeed()
+        self.logg('big fire handled. Releasing bot')
+        return Teamup.Result()
 
+    def assignGoalCBStratA(self, request, response):
+        response.goal_pose = Pose(position=self.generateGoal(u.convertNamespaceID(request.tb_id, int)))
+        return response
 
-class ClientHandler:
-
-    def __init__(self, node, id, actionType, actionName, startingPosition=Point(x=0.0, y=0.0, z=0.0)):
-        self.latestPosition = startingPosition
-        self.__id = id 
-        self.__name = 'client_'+str(id)
-        self.__createRandomPoint = None
-        self.__isLocked = False
-        self.__greenFlag = True
-        self.__markerStack = list()
-        self.__pivotMarkerPose = None
-        self.__flameMarkerPose = None
-        self.__goalHandle, self.__goal = None, None
-        self.__client = ActionClient(node, actionType, actionName)
-        self.logg('INITIALIZED')
-
-    def locking(m):
-        def method (fles, *args, **kwargs):
-            fles.__lock()
-            result = m(fles, *args, **kwargs)
-            fles.__unlock()
-            return result
-        return method
-
-    def id(self):
-        return self.__id
-
-    def logg(self, obj):
-        u.logg(self.__name, obj)
-
-    @locking
-    def kill(self):
-        self.__ensureCanceled()
-
-    @locking
-    def startWorking(self):
-        s='is to send new goal\nwill first cancel current goal if any'
-        self.__ensureCanceled()
-        self.__greenFlag = False
-        if not self.__flameMarkerPose is None:
-            goal = self.__flameMarkerPose.position
-            s+='\nfire ongoing at detected position'
-        elif not self.__pivotMarkerPose is None:
-            goal = self.__pivotMarkerPose.position
-            s+='\nattempting to capture unaccepted marker'
-        elif len(self.__markerStack) > 0:
-            self.__pivotMarkerPose = self.__markerStack[-1][1]
-            goal = self.__pivotMarkerPose.position
-            s+='\nhad undetected marker registered'
+    def assignGoalCBStratB(self, request, response):
+        i = u.convertNamespaceID(request.tb_id, int)
+        if i == 0:
+            p = self.generateGoal(random.choice((0, 1)))
+            p.x, p.y = p.x*0.5, p.y*0.5
+            response.goal_pose = Pose(position=p)
+            return response
         else:
-            goal = self.__createRandomPoint()
-            s+='\nfree to search, generating random'
-        self.logg(s+'\nRequesting action server\ngoal=(%s, %s)'%(goal.x, goal.y))
-        self.__goal = goal
-        request = Bug2.Goal(target_position=goal)
-        self.__client.wait_for_server()
-        future = self.__client.send_goal_async(request, self.__feedCallBack)
-        future.add_done_callback(self.__responseCallback)
+            response.goal_pose = Pose(position=self.sendToEdge())
+        return response
 
-    def isReady(self): 
-        return self.__greenFlag
+    def sendToEdge(self):
+        x = float((-1)**random.randint(0, 1)*10)
+        y = float((-1)**random.randint(0, 1)*10)
+        return Point(x=x, y=y)
 
-    def setGoalGenerator(self, generator): 
-        self.__createRandomPoint = generator
+    def generateGoal(self, i):
+        point = self.defaultPoint
+        w = random.randint(self.wmin + (self.dw//2)*i, self.wmin + (self.dw//2)*(i+1))
+        hlimin, hlimax = self.hBorders[w]
+        h = random.randint(hlimin, hlimax)
+        point = u.mapToRealPoint(self.occGrid, w, h)
+        self.logg('point generated: %s, %s'%(round(point.x, 2), round(point.y, 2)))
+        return point
+    
+    def testDone(self):
+        if len(self.markers) >= 5 and self.aruco4OK:
+            self.logg('all done\n'.upper()*20 + str(self.markers).replace(',', '\n'))
+            self.flagPublisher.publish(JustBool(green=False))
+            return True
+        return False
 
-    @locking
-    def assignBigFire(self, markerPose):
-        self.logg('is assigned responsibility of fire event\n '+
-                  'pose.position=%s'%(markerPose.position))
-        self.__flameMarkerPose = markerPose
-        self.__greenFlag = True
-
-    @locking
-    def markFireComplete(self):
-        self.logg('received notice of fire event completion')
-        self.__flameMarkerPose = None
-        self.__greenFlag = True
-
-    @locking
-    def noteUnaccepted(self, markerID, markerPose):
-        self.logg(('received notice of unaccepted marker\nid=%s, pose.position='+
-                  '%s')%(markerID, markerPose.position))
-        self.__markerStack.append((markerID, markerPose))
-        self.__pivotMarkerPose = None
-        if self.__flameMarkerPose is None:
-            self.__greenFlag = True
-
-    @locking
-    def noteAccepted(self, markerID):
-        s='received notice of accepted marker\n id=%s'%(markerID)
-        if self.__markerStack[-1][0] == markerID and self.__markerStack:
-            self.__pivotMarkerPose = None
-        for i in range(len(self.__markerStack)):
-            if self.__markerStack[i][0] == markerID:
-                self.logg(s+'\nsuccesfully found in marker stack')
-                self.__markerStack.pop(i)
-                break
-        self.logg(s+'\n! but marker was not found in stack')
-
-    def __ensureCanceled(self):
-        if not self.__isLocked:
-            raise Exception('attempt to cancel goal outside locked section')
-        if self.__goalHandle is None:
-            return 
-        self.__goalHandle.cancel_goal_async()
-        self.__goalHandle = None
-
-    @locking
-    def __responseCallback(self, ghFuture):
-        s='response callback called'
-        self.__goalHandle = ghFuture.result()
-        if not self.__goalHandle.accepted:
-            self.logg(s+'\n .. the request was not accepted')
-            self.__goalHandle, self.__goal = None, None
-            self.__greenFlag = True
-            return
-        self.logg(s+'\n .. the request was accepted')
-        self.__goalHandle.get_result_async().add_done_callback(self.__resultCallback)
-
-    @locking
-    def __resultCallback(self, resultFuture):
-        s='result callback called'
-        p = resultFuture.result().result.base_position
-        distance = u.distance(p.x, p.y, self.__goal.x, self.__goal.y)
-        self.__goalHandle, self.__goal = None, None
-        if not self.__flameMarkerPose is None and distance < DISTANCE_THRESHOLD:
-            self.logg(s+'\n! Engaged in fire event\n .. and the computed distance from the goal '+
-                      'was small enought for threshhold\n .. will wait')
-            self.__greenFlag = False
-            return
-        if not self.__pivotMarkerPose is None:
-            self.logg(s+'\nhas retried once, but without being notified about detection acceptance'+
-                      '\ngiving up marker with id %s'%(self.__markerStack[-1][0]))
-            self.__markerStack.pop()
-        self.logg(s+'\nready for next task\ndistance from goal position was %s'%(distance))
-        self.__greenFlag = True
-        
-    def __feedCallBack(self, feedbackMsg):
-        self.latestPosition = feedbackMsg.feedback.current_position
-
-    def __lock(self):
-        while self.__isLocked:
-            time.sleep(0.01)
-        self.__isLocked =True
-
-    def __unlock(self):
-        self.__isLocked = False
+    def logg(self, *obj):
+        self.get_logger().info(u.logg(self.name, *obj))
 
 def main(args=None):
-    rclpy.init(args=args)
-    controller = Coordinator()
     try:
-        controller.spin()
+        rclpy.init(args=args)
+        executor = MultiThreadedExecutor()
+        controller = Coordinator()
+        executor.add_node(controller)
+        executor.spin()
     except KeyboardInterrupt:
+        rclpy.shutdown()
         pass
-    controller.destroy_node()
-    rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
