@@ -11,7 +11,7 @@ from nav_msgs.msg import Odometry
 from scoring_interfaces.srv import SetMarkerPosition
 from geometry_msgs.msg import Point
 
-LOGGLEVEL = LoggingSeverity.ERROR
+LOGGLEVEL = LoggingSeverity.INFO
 
 class ScoringClass(Node):
 

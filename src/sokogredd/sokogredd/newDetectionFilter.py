@@ -6,7 +6,7 @@ from rclpy.node import Node
 from detection.msg import Detection
 from scoring_interfaces.srv import SetMarkerPosition
 from rclpy.logging import LoggingSeverity
-from bug2_navigation import global_utils as gu
+import _testimportmultiple
 
 from rclpy.logging import LoggingSeverity
 
@@ -56,9 +56,9 @@ def main(args=None):
     try:
         rclpy.spin(controller)
     except KeyboardInterrupt:
+        controller.destroy_node()
+        rclpy.shutdown()
         pass
-    controller.destroy_node()
-    rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

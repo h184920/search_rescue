@@ -1,34 +1,26 @@
 import rclpy
 import rclpy.action as act
 import bug2_navigation.global_utils as gu
-
 import time
 import math as m
-
+import random
+import threading
 from rclpy.node import Node
 from rclpy.callback_groups import ReentrantCallbackGroup, MutuallyExclusiveCallbackGroup
-from rclpy.logging import LoggingSeverity
-
+from rclpy.executors import MultiThreadedExecutor
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Point
 from geometry_msgs.msg import Twist
-from std_srvs.srv import SetBool
-
-from bug2_interfaces.action import Bug2
-from bug2_interfaces.srv import GoToPoint
 from interfjeses.msg import JustBool
-
-from random import randint
-
-from rclpy.timer import Timer
-
+from std_srvs.srv import SetBool
+from bug2_interfaces.srv import GoToPoint
+from bug2_interfaces.action import Bug2
 
 GOTORANGE = 1.5
 DANGERZONE = GOTORANGE*0.4
-LINE_THICKNESS = 0.75
+LINE_THICKNESS = 1.0
 LASAR_SPREAD = 15
-
 
 class bug2_controller(Node):
 
@@ -36,28 +28,53 @@ class bug2_controller(Node):
         super().__init__("bug2")
         self.declare_parameter('namespace')
         self.namespace = self.get_parameter('namespace').get_parameter_value().string_value
-        self.loggCount = 0
-        self.loggMod = 50
+        self.logglevel = 1
         self.x = self.y = None
+        self.lastCheckedOrient = self.lastCheckedPos = self.orient = None
         self.passed_guard = False
+        self.reentrantCBG = ReentrantCallbackGroup()
+        self.stateTimer = self.create_timer(10.0, self.checkState, self.reentrantCBG)
         self.breakSignaler = self.create_publisher(JustBool, 'at_once', 10)
         self.odom_sub = self.create_subscription(Odometry, 'odom', self.odom_callback, 10)
         self.scanner_sub = self.create_subscription(LaserScan, 'scan', self.laser_callback, 10)
         self.mainLooper = self.create_timer(0.1, self.main_loop)
         self.clientCBG = MutuallyExclusiveCallbackGroup()
-        self.goto_client = self.create_client(GoToPoint, 'go_to_point_bryter', callback_group=self.clientCBG)
-        self.wallfollow_client = self.create_client(SetBool, 'wall_follower_bryter', callback_group=self.clientCBG)
-        self.actionCBG = MutuallyExclusiveCallbackGroup()
-        self.actionServer = act.ActionServer(self, Bug2, 'bug2', execute_callback=self.lead_callback, cancel_callback=self.cancel_callback, callback_group=self.actionCBG)
+        self.goto_client = self.create_client(GoToPoint, 'go_switch', callback_group=self.clientCBG)
+        self.wallfollow_client = self.create_client(SetBool, 'wall_switch', callback_group=self.clientCBG)
+        self.lastCheckedPosition = None
+        self.spinPub = self.create_publisher(Twist, 'cmd_vel', 10)
+        self.lastEnabler = self.enable_gotopoint
+        self.acceptCount = 0
+        self.lockA = threading.Lock()
+        self.lockB = threading.Lock()
+        self.actionServer = act.ActionServer(self, Bug2, 'navigate', execute_callback=self.lead_callback, goal_callback=self.goalCB, cancel_callback=self.cancelCB, callback_group=self.reentrantCBG)
         while not self.goto_client.wait_for_service(timeout_sec=1.0):
-            self.force_logg("waiting for gotopoints server to initialize")
-        self.force_logg("..connection established")
+            self.logg2("waiting for gotopoints server to initialize")
+        self.logg2("..connection established")
         while not self.wallfollow_client.wait_for_service(timeout_sec=1.0):
-            self.force_logg("waiting for wallfollowers server to initialize")
+            self.logg2("waiting for wallfollowers server to initialize")
         self.reset()
-        self.force_logg("..connection established")
-        self.force_logg("initialized bug2 controller\n".upper()*5)
-        self.get_logger().set_level(LoggingSeverity.FATAL)
+        self.logg2("..connection established")
+        self.logg2("initialized bug2 controller\n".upper()*5)
+
+    # callbacks
+
+    def checkState(self):
+        if self.orient is None or self.guardOn():
+            return
+        if self.lastCheckedOrient is None:
+            self.lastCheckedOrient = self.orient
+            self.lastCheckedPosition = Point(x=self.x, y=self.y)
+            return
+        if (abs(self.lastCheckedOrient - self.orient) < 0.3
+                and abs(self.x - self.lastCheckedPosition.x) < 0.1
+                and abs(self.y - self.lastCheckedPosition.y) < 0.1):
+            self.logg1('spinning free\n'.upper()*10)
+            for _ in range(50):
+                self.spinPub.publish(makeTwist(lin=0.0, ang=m.pi))
+                time.sleep(0.1)
+        self.lastCheckedPosition = Point(x=self.x, y=self.y)
+        self.lastCheckedOrient = self.orient
 
     def main_loop(self):
         if self.guardOn():
@@ -66,44 +83,48 @@ class bug2_controller(Node):
             self.iterate()
             return
         self.stop_all_at_once()
-        time.sleep(1.0)
 
-    # action callbacks
+    def cancelCB(self, _):
+        return act.CancelResponse.ACCEPT
+
+    def goalCB(self, _):
+        if self.acceptCount > 2:
+            return act.GoalResponse.REJECT
+        with self.lockB:
+            self.acceptCount += 1
+        return act.GoalResponse.ACCEPT
 
     def lead_callback(self, goalHandle: act.server.ServerGoalHandle):
-        self.reset(target=goalHandle.request.target_position)
-        was_canceled = False
-        while not (self.guardOn() or was_canceled):
+        with self.lockA:
+            self.logg1('new action started')
+            self.reset(target=goalHandle.request.target_position)
+            while not (self.guardOn() or self.on_target() or goalHandle.is_cancel_requested):
+                time.sleep(1.0)
+                if not self.odomed or not self.scanned:
+                    continue
+                goalHandle.publish_feedback(Bug2.Feedback(current_position=Point(x=self.x, y=self.y)))
+            result = Bug2.Result()
             if goalHandle.is_cancel_requested:
-                was_canceled = True
                 goalHandle.canceled()
-                break
-            time.sleep(1.0)
-            if not self.odomed or not self.scanned:
-                continue
-            goalHandle.publish_feedback(Bug2.Feedback(current_position=Point(x=self.x, y=self.y)))
-        result = Bug2.Result(was_canceled=was_canceled)
-        if not was_canceled:
-            goalHandle.succeed()
-        result.base_position = Point(x=self.x, y=self.y)
-        self.spin = True
-        self.reset()
-        return result
-
-    def cancel_callback(self, cReq):
-        self.force_logg('goal was canceled and callback called\n'*10)
-        return act.CancelResponse.ACCEPT
-    
-    # subscription callbacks
+            else:
+                goalHandle.succeed()
+                result.base_position = Point(x=self.x, y=self.y)
+            self.spin = True 
+            self.reset()
+            with self.lockB:
+                self.acceptCount -= 1
+            self.logg1('action ended')
+            return result
 
     def odom_callback(self, msg):
         if self.guardOn():
             return
         self.passed_guard = True
         self.x, self.y = gu.extract_odom_position(msg)
+        self.orient = gu.extract_odom_orientation(msg)
         self.offset = gu.compute_distance_and_offset(
                 self.x, self.y, 
-                gu.extract_odom_orientation(msg), 
+                self.orient, 
                 self.target.x, self.target.y)[1]       
         self.odomed = True
         self.passed_guard = False
@@ -127,33 +148,33 @@ class bug2_controller(Node):
         self.active_handler()
            
     def initial_handler(self):
-        self.logg("INITAL STATE:")
+        self.logg2("INITAL STATE:")
         if not (self.odomed and self.scanned):
-            self.itrlog("..still waiting for odom and scanner data")
+            self.logg2("..still waiting for odom and scanner data")
             return
         if not self.is_hindered():
-            self.itrlog("starting in gotopoint")
+            self.logg2("starting in gotopoint")
             self.enable_gotopoint()
         else:
-            self.itrlog("starting in gotopoint")
+            self.logg2("starting in wallfollower")
             self.enable_wallfollower()
 
     def wallfollow(self):
-        self.logg(f"IN STATE WALLFOLLOWER. Count = {self.w_count}")
+        self.logg2(f"IN STATE WALLFOLLOWER. Count = {self.w_count}")
         if self.on_track() and not self.is_hindered() and self.request_stop_wallfollower():
-            self.itrlog(f"..position on line\n{'-'*20}switching state{'-'*20}")
+            self.logg3(f"..position on line\n{'-'*20}switching state{'-'*20}")
             self.enable_gotopoint()
             return False
-        self.itrlog("..continuing in wallfollower")
+        self.logg3("..continuing in wallfollower")
         return True
    
     def gotopoint(self):
-        self.logg(f"IN STATE GOTOPOINT. Count = {self.g_count}")
+        self.logg2(f"IN STATE GOTOPOINT. Count = {self.g_count}")
         if self.is_hindered() and self.request_stop_gotopoint():
-            self.itrlog("-"*20+"switching state"+"-"*20)
+            self.logg3("-"*20+"switching state"+"-"*20)
             self.enable_wallfollower()
             return False
-        self.itrlog("..continuing in gotopoint")
+        self.logg3("..continuing in gotopoint")
         return True
 
     # enable / disable
@@ -162,44 +183,47 @@ class bug2_controller(Node):
         self.breakSignaler.publish(JustBool(green=False))
 
     def enable_gotopoint(self):
-        self.itrlog("sending request to enable gotopoint")
+        self.logg3("sending request to enable gotopoint")
         response = self.send_and_receive(self.goto_client, GoToPoint.Request(move_switch=True, target_position=self.target))
         if response.success:
-            self.itrlog("gotopoint responed with true\n ..gotopoint enabled")
+            self.lastEnabler = self.enable_gotopoint
+            self.logg1("gotopoint enabled")
             self.active_handler = self.gotopoint
             self.g_count += 1
         else:
-            self.itrlog("gotopoint responded with false\n ..not enabled")
+            self.logg3("gotopoint responded with false\n ..not enabled")
         return response.success
 
     def request_stop_gotopoint(self):
-        self.itrlog("sending request to disable gotopoint")
+        self.logg3("sending request to disable gotopoint")
         response = self.send_and_receive(self.goto_client, GoToPoint.Request(move_switch=False, target_position=self.target))
         if response.success:
-            self.itrlog("gotopoint responded with true\n ..disabled")
+            self.logg3("gotopoint responded with true\n ..disabled")
         else:
-            self.itrlog("gotopoint responded with false\n ..not disabled\n SHOULD BE ON TARGET")
+            self.logg3("gotopoint responded with false\n ..not disabled\n SHOULD BE ON TARGET")
         return response.success
 
     def enable_wallfollower(self):
-        self.itrlog("sending request to enable wallfollower")
+        self.logg3("sending request to enable wallfollower")
         response = self.send_and_receive(self.wallfollow_client, SetBool.Request(data=True))
         if response.success:
-            self.itrlog("wallfollower responded with true\n ..enabled")
+            self.lastEnabler = self.enable_wallfollower
+            self.logg1("wallfollower enabled")
             self.set_line_from_current_position()
             self.active_handler = self.wallfollow
             self.w_count += 1
+            time.sleep(0.5)
         else:
-            self.itrlog("wallfollower responded with false ????\n ..not enabled")
+            self.logg3("wallfollower responded with false ????\n ..not enabled")
         return response.success
   
     def request_stop_wallfollower(self):
-        self.itrlog("sending request for disabling to wallfollower")
+        self.logg3("sending request for disabling to wallfollower")
         response = self.send_and_receive(self.wallfollow_client, SetBool.Request(data=False))
         if response.success:
-            self.itrlog("wallfollower respponded with true\n ..disabled")
+            self.logg3("wallfollower respponded with true\n ..disabled")
         else:
-            self.itrlog("wallfollower responded with false ????\n ..enabled")
+            self.logg3("wallfollower responded with false ????\n ..enabled")
         return response.success
 
     def send_and_receive(self, client, request):
@@ -207,8 +231,9 @@ class bug2_controller(Node):
 
     # state updates
 
-    def reset(self, target=None):
+    def reset(self, target=None): 
         while self.passed_guard:
+            self.logg3('passed guard is %s'%(self.passed_guard))
             time.sleep(0.1)
         self.in_reset = True
         self.odomed = self.scanned = False
@@ -235,21 +260,21 @@ class bug2_controller(Node):
             or self.is_frontblocked(DANGERZONE) or self.is_pathblocked(DANGERZONE)))
 
     def is_pathblocked(self, range):
-        self.itrlog(f"checking for blockage along path for distance {range}")
+        self.logg3(f"checking for blockage along path for distance {range}")
         if (self.aligned_lasar < range):
-            self.itrlog("WALL DETECTED")
+            self.logg3("WALL DETECTED")
             return True
-        self.itrlog("path is free")
+        self.logg3("path is free")
         return False
 
     def is_frontblocked(self, range):
-        self.itrlog(f"checking for blockage of front for distance {range}")
+        self.logg3(f"checking for blockage of front for distance {range}")
         if (self.front_lasar < range 
             or self.lasarL1 < range or self.lasarR1 < range
             or self.lasarL2 < range or self.lasarR2 < range):
-            self.logg("WALL DETECTED")
+            self.logg2("WALL DETECTED")
             return True
-        self.itrlog("front free")
+        self.logg3("front free")
         return False
 
     def on_target(self):
@@ -259,7 +284,7 @@ class bug2_controller(Node):
         return self.approved_distance(distance)
     
     def on_track(self):
-        self.itrlog("checking position for alignment")
+        self.logg3("checking position for alignment")
         px, py = delta(self.line_begin_x, self.x), delta(self.line_begin_y, self.y)
         tx, ty = delta(self.line_begin_x, self.target.x), delta(self.line_begin_y, self.target.y)
         p_len = vector_length(px, py)
@@ -279,21 +304,20 @@ class bug2_controller(Node):
 
     # just logging
 
-    def itrlog(self, message, indent=5):
-        self.logg(" "*indent + str(message).replace("\n", " "*indent+"\n"))
-
-    def logg(self, obj):
-        self.loggCount += 1
-        if not self.loggCount%self.loggMod == 0:
+    def logg3(self, obj, indent=5):
+        if self.logglevel < 3:
             return
-        self.loggCount = 0
-        self.get_logger().info(gu.logg(self.namespace+'/bug2', obj))
+        self.get_logger().info(" "*indent + str(obj).replace("\n", " "*indent+"\n"))
 
-    def force_logg(self, obj):
-        count = self.loggCount
-        self.loggCount = self.loggMod -1
-        self.logg(obj)
-        self.loggCount = count
+    def logg2(self, obj, indent=5):
+        if self.logglevel < 2:
+            return
+        self.get_logger().info(" "*indent + str(obj).replace("\n", " "*indent+"\n"))
+
+    def logg1(self, obj, indent=5):
+        if self.logglevel < 1:
+            return
+        self.get_logger().info(" "*indent + str(obj).replace("\n", " "*indent+"\n"))
         
 
 # bug2 end ..
@@ -307,20 +331,43 @@ def vector_length(x, y):
 def vector_product(x1, y1, x2, y2):
     return x1*x2 + y1*y2
 
+def makeTwist(lin=0.0, ang=0.0):
+    twist = Twist()
+    twist.linear.x = lin
+    twist.angular.z = ang
+    return twist
+
 TARGET = None
+TEST = False
+
+def test_loop(instance: bug2_controller, executor: MultiThreadedExecutor):
+    import re
+    while True:
+        target = (random.randint(-10, 10)/10, random.randint(-50, 50)/10)
+        instance.logg1('\n\n\n new target set: %s'%(str(target)))
+        time.sleep(3.0)
+        instance.reset(target=Point(x=target[0], y=target[1]))
+        count = 0
+        while not instance.on_target():
+            executor.spin_once()
+            if count % 50 == 0:
+                instance.logg1('\nTARGET: %s\n'%(str(target)))
+                count = 0
+            count += 1
 
 
 def main(args=None):
-    from rclpy.executors import MultiThreadedExecutor
     rclpy.init(args=args)
     controller = bug2_controller()
     executor = MultiThreadedExecutor()
-    controller.reset(TARGET)
     executor.add_node(controller)
-    try:
-        executor.spin()
-    except KeyboardInterrupt:
-        pass
+    if TEST:
+        test_loop(controller, executor)
+    else:
+        try:
+            executor.spin()
+        except KeyboardInterrupt:
+            pass
     rclpy.shutdown()
 
 if __name__ == '__main__':

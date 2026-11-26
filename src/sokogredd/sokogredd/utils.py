@@ -1,5 +1,5 @@
 import math as m
-from random import randint
+import random
 from geometry_msgs.msg import Point
 from nav_msgs.msg import OccupancyGrid
 
@@ -13,6 +13,8 @@ def mapToRealPoint(occGrid, w, h):
     y = __mapToRealY(occGrid, h)
     return Point(x=x, y=y)
 
+def equalPoints(a, b):
+    return a.x == b.x and a.y == b.y
 
 def findWBorders(occGrid):
     return __findOccupancyGridBorders(occGrid, lambda w, h: (h, w))
@@ -21,12 +23,18 @@ def findWBorders(occGrid):
 def findHBorders(occGrid):
     return __findOccupancyGridBorders(occGrid, lambda w, h: (w, h))
 
-
-def logg(loggerName, *args):
-    if len(args) == 1:
-        args = args[0]
-    s = '%s:\n%s\n'%(loggerName, str(args))
-    return s.replace('\n', '\n'+' '*10)
+def findMinMax(borders):
+    n, x = 0, 0
+    length = len(borders)
+    for i in range(length):
+        if borders[i][0] < borders[i][1]:
+            n = i
+            break
+    for i in range(length):
+        if borders[length - i - 1][0] < borders[length - i - 1][1]:
+            x = length - i - 1
+            break
+    return n, x
 
 def convertNamespaceID(tb_id, typeof):
     if isinstance(tb_id, typeof):
@@ -35,35 +43,62 @@ def convertNamespaceID(tb_id, typeof):
         return int(tb_id.strip()[-1])
     return 'tb3_'+str(tb_id)
 
-def pl(matrix, a='*', b='#'):
-    return '\n'.join([' '.join([b if item==1 else a for item in row]) for row in matrix])
+def xand(a, b):
+    return a and b or not (a or b)
+
+def xor(a, b):
+    return not xand(a, b)
+
+def logg(loggerName, *args):
+    if len(args) == 1:
+        args = args[0]
+    s = '%s:\n%s\n'%(loggerName, str(args))
+    return s.replace('\n', '\n'+' '*10)
+
+class PointGenerator:
+
+    def __init__(self, occGrid):
+        self.defaultPoint = (0, 0)
+        self.wBorders = findWBorders(occGrid)
+        self.hBorders = findHBorders(occGrid)
+        self.wmin, self.wmax = findMinMax(self.hBorders) # yes, they are switched
+        self.hmin, self.hmax = findMinMax(self.wBorders) # yes, they are switched
+        assert self.wmin < self.wmax
+        assert self.hmin < self.hmax
+        self.dw = self.wmax - self.wmin
+        self.dh = self.hmax - self.hmin
+
+    def generateGoal(self, i):
+        assert -1 < i < 2
+        point = self.defaultPoint
+        attempts = 0
+        trueattempts = 0
+        while attempts < 50:
+            trueattempts += 1
+            w = random.randint(self.wmin + (self.dw//2)*i, self.wmin + (self.dw//2)*(i+1))
+            h = random.randint(self.hmin, self.hmax)
+            hmin, hmax = self.hBorders[w]
+            wmin, wmax = self.wBorders[h]
+            if not wmin < w < wmax:
+                pass
+            elif hmin < h < hmax:
+                point = (w, h)
+                attempts = 50
+            attempts += 1
+        return point
  
 
 # non-public 
 
 def __findOccupancyGridBorders(occGrid, arrangeDim):
-    print('enter')
     _ = occGrid.info
     parallellN, orthagonalN = arrangeDim(_.width, _.height)
     borders = []
-    count, lock, mini, maxi = 0, False, 0, 0
     for p in range(parallellN):
         oStart = __findEdge(occGrid, p, orthagonalN, lambda o: o, arrangeDim)
         oStop = __findEdge(occGrid, p, orthagonalN, lambda o: orthagonalN-o-1, arrangeDim)
-        if oStart > oStop and count < 2:
-            if not lock:
-                count += 1
-                lock = True
-                if count == 1:
-                    mini = p
-        elif oStart < oStop:
-            if lock:
-                lock = False
-        if count == 2:
-            maxi = p
-            break
         borders.append((oStart, oStop))
-    return (borders, mini, maxi)
+    return borders
 
 def __findEdge(occGrid, p, orthagonalLen, sidePicker, arrangeDim):
     status = 0
@@ -87,27 +122,40 @@ def __mapToRealY(occGrid, h):
     return O.y + cellUnit*h
 
 if __name__ == '__main__':
-    import random
 
-    m, n = 40, 45
-    matrix = [[(1 if (0<j<3 or n-4<j<n-1) and 0<i<m-1 else 0) for j in range(n)] for i in range(m)]
-    ones = [0, *[1 for i in range(n-2)], 0]
-    matrix.insert(1, ones)
-    matrix.insert(1, ones)
-    matrix.insert(len(matrix)-1, ones)
-    matrix.insert(len(matrix)-1, ones)
-    for _ in range(20):
-        length = random.randint(1, 20)
-        i0 = random.randint(4, len(matrix)-length-1)
+    def pl(matrix, a='*', b='#'):
+        return '\n'.join([''.join([b if item==1 else a for item in row]) for row in matrix])
+
+    k, n = 40, 60
+    padding = 3
+    tykk = 2
+    matrix = [
+        [(1 if (padding-1<j<padding+tykk or n-padding-tykk-2<j<n-padding) and padding-2<i<k-padding-2 else 0) for j in range(n)] 
+        for i in range(k)
+        ]
+    for i in range(padding, padding+tykk):
+        for j in range(padding+tykk-1, n-padding-tykk):
+            matrix[i][j] = 1
+    print(pl(matrix))
+    for _ in range(10):
+        length = random.randint(1, 10)
+        i0 = random.randint(4, len(matrix)-length-3)
         j = random.choice(list(range(4, len(matrix[0])-4, 4)))
         for d in range(length):
             matrix[i0+d][j] = 1
-    pl(matrix, str(0), str(1))
     occg = OccupancyGrid(data=[bit for row in matrix for bit in row])
     occg.info.width, occg.info.height = len(matrix[0]), len(matrix) 
-    print(findWBorders(occg))
-    print(findHBorders(occg))
-    
+    gen = PointGenerator(occg)
+    strMatrix = pl(matrix, '+', '.')
+    print(strMatrix)
+    palet = [list(row) for row in strMatrix.strip().split('\n')]
+    for _ in range(50):
+        w, h = gen.generateGoal(0)
+        palet[w][h] = 'A'
+        w, h = gen.generateGoal(1)
+        palet[w][h] = 'B'
+    print()
+    print('\n'.join([''.join(row) for row in palet]))
 
 
 

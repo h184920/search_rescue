@@ -7,16 +7,16 @@ from geometry_msgs.msg import Twist
 from bug2_interfaces.srv import GoToPoint
 from bug2_navigation.global_utils import logg
 from interfjeses.msg import JustBool
-from tf_transformations import euler_from_quaternion
-from math import sin, cos, pi, sqrt, acos
+from math import sin, cos, pi
 
 TEST = False
+LOGGING = False
 
 LANDING_RANGE = 1.5
 TARGET_FRACTION = 0.5
 TARGET = (0.0, 0.0)
 
-LINEAR = 0.8
+LINEAR = 0.7
 
 
 class gotopoint_controller(Node):
@@ -25,19 +25,20 @@ class gotopoint_controller(Node):
         super().__init__("gotopoint")
         self.declare_parameter('namespace')
         self.namespace = self.get_parameter('namespace').get_parameter_value().string_value
+        self.logg(self.namespace)
+        self.namespace = self.get_parameter('namespace').get_parameter_value().string_value
         self.sub = self.create_subscription(Odometry, 'odom', self.odom_callback, 10)
         self.pub = self.create_publisher(Twist, 'cmd_vel', 10)
         self.active = init_active
         self.received_initial_message = False
         self.timer = self.create_timer(0.1, self.publish_twist)
-        self.server = self.create_service(GoToPoint, 'go_to_point_bryter', self.respond_to_switch)
+        self.server = self.create_service(GoToPoint, 'go_switch', self.respond_to_switch)
         self.create_subscription(JustBool, 'at_once', self.receiveBreak, 10)
         self.x = self.y = self.orientation = self.dist = self.off = 0.0
         self.tX, self.tY = target
         self.loggMod = 50
         self.loggCount = self.loggMod
-        self.force_logg(f"initialized gotopoint_controller with target as {self.tX, self.tY}\n".upper()*5)
-        self.get_logger().set_level(LoggingSeverity.FATAL)
+        self.logg(f"initialized gotopoint_controller with target as {self.tX, self.tY}\n".upper()*5)
 
     def receiveBreak(self, _):
         t = Twist()
@@ -78,7 +79,7 @@ class gotopoint_controller(Node):
         self.pub.publish(twist)
 
     def respond_to_switch(self, request, response):
-        self.force_logg("gotopoint: received request: " + str(request.move_switch))
+        self.logg("gotopoint: received request: " + str(request.move_switch))
         for i in range(3):
             twist = Twist()
             twist.linear.x = twist.angular.z = 0.0
@@ -125,21 +126,13 @@ class gotopoint_controller(Node):
             f" lin = {round(tvist.linear.x, 2)}, ang = {round(tvist.angular.z, 2)}\n")
 
     def logg(self, obj):
-        self.loggCount += 1
-        if not self.loggCount%self.loggMod == 0:
+        if not LOGGING:
             return
-        self.loggCount = 0
         self.get_logger().info(logg(self.namespace+'/gotopoint', obj))
-
-    def force_logg(self, obj):
-        count = self.loggCount
-        self.loggCount = self.loggMod -1
-        self.logg(obj)
-        self.loggCount = count
 
 # gotopoint_controller end ..
 
-def test_loop(instance: gotopoint_controller):
+def test_loop(instance):
     from random import randint
     import re
     while True:
